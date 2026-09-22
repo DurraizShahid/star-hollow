@@ -1,92 +1,187 @@
 # discovery_system.gd
-# -----------------------------------------------------------------------------
-# Discovery catalogue with fingerprint-distance tracking.
-#
-# A report's fingerprint is the SET of discovered names it carries, split into
-# three kinds: elements, compounds (species/minerals), materials (labels).
-# A new report is considered a *discovery* when its fingerprint introduces at
-# least one previously-unseen name; the catalogue marks first-seen entries. The
-# gameplay "distance travelled between discoveries" uses a Jaccard-style
-# fingerprint distance, seeded from the last two packets.
-# -----------------------------------------------------------------------------
+# Elements/compounds are finite catalogues. "Materials" are continuous numeric
+# signatures; sufficiently distant signatures become new discoveries.
 class_name DiscoverySystem
 extends RefCounted
 
+const NOVELTY_THRESHOLD := 0.16
 const KINDS := ["elements", "compounds", "materials"]
 
-var catalogue := {
-	"elements": {},
-	"compounds": {},
-	"materials": {},
-}
+var catalogue := {"elements": {}, "compounds": {}, "materials": {}}
+var material_records: Array = [] # [{id,label,fingerprint,count,first_position}]
 var total_found := 0
 var _last_fingerprint := {}
 var _farthest := 0.0
 
-## Extract the fingerprint set from a report.
 static func fingerprint(report: Dictionary) -> Dictionary:
-	var fp := { "elements": [], "compounds": [], "materials": [] }
-	var elements: Dictionary = report.get("elements", {})
-	for e in elements.keys():
-		fp["elements"].append(e)
-	var substrate: Dictionary = report.get("substrate", {})
-	for m in substrate.get("minerals", []):
-		fp["compounds"].append(m["name"])
-	var atm: Dictionary = report.get("atmosphere", {})
-	for s in atm.get("species", []):
-		fp["compounds"].append(s["symbol"])
-	var surface: Dictionary = report.get("surface", {})
-	var ms: Array = surface.get("materials", [])
-	for mm in ms:
-		fp["materials"].append(mm["label"])
-	return fp
+	var names_elements: Array = report.get("elements_mass_pct", report.get("elements", {})).keys()
+	var names_compounds: Array = []
+	var mineral_vector := {}
+	for m in report.get("substrate", {}).get("minerals", []):
+		var n := String(m.get("name", "?"))
+		names_compounds.append(n)
+		mineral_vector[n] = float(m.get("fraction", 0.0))
+	for s in report.get("atmosphere", {}).get("species", []):
+		var sym := String(s.get("symbol", "?"))
+		if not names_compounds.has(sym):
+			names_compounds.append(sym)
 
-## Feed a report into the catalogue.
-## Returns { "new": [{kind, name}...], "distance": float, "total": int }
+	var element_vector := {}
+	for e in report.get("elements_mass_pct", report.get("elements", {})).keys():
+		element_vector[e] = float(report.get("elements_mass_pct", report.get("elements", {}))[e]) / 100.0
+
+	var surface: Dictionary = report.get("surface", {})
+	var covers: Dictionary = surface.get("covers", {})
+	var substrate: Dictionary = report.get("substrate", {})
+	var phase_vector := {
+		"liquid": float(covers.get("liquid", 0.0)),
+		"frost": float(covers.get("frost", 0.0)),
+		"sediment": float(covers.get("sediment", 0.0)),
+		"organic": float(covers.get("organic", 0.0)),
+		"vegetation": float(covers.get("vegetation", 0.0)),
+	}
+	var texture := {
+		"porosity": float(substrate.get("porosity", 0.0)),
+		"grain_size_m": float(substrate.get("grain_size_mean_m", 1.0e-3)),
+		"weathering": float(substrate.get("weathering_index", 0.0)),
+		"oxidation": float(substrate.get("oxidation_index", 0.0)),
+		"hydration": float(substrate.get("hydration_index", 0.0)),
+	}
+	var environment := {
+		"temperature_k": float(report.get("temperature", 0.0)),
+		"pressure_pa": float(report.get("pressure", 0.0)),
+	}
+
+	return {
+		# Compatibility/name sets:
+		"elements": names_elements,
+		"compounds": names_compounds,
+		"materials": [String(report.get("classification", "unclassified"))],
+		# Quantitative identity:
+		"element_vector": element_vector,
+		"mineral_vector": mineral_vector,
+		"phase_vector": phase_vector,
+		"texture": texture,
+		"environment": environment,
+	}
+
 func process(report: Dictionary) -> Dictionary:
 	var fp := fingerprint(report)
 	var new_items: Array = []
-	for kind in KINDS:
-		for name in fp[kind]:
-			if not catalogue[kind].has(name):
-				catalogue[kind][name] = 0
-		for name in fp[kind]:
-			catalogue[kind][name] = catalogue[kind][name] + 1
-			if catalogue[kind][name] == 1:
-				new_items.append({ "kind": kind, "name": name })
-				total_found += 1
 
-	var dist := 0.0
+	for name in fp["elements"]:
+		if not catalogue["elements"].has(name):
+			catalogue["elements"][name] = 0
+			new_items.append({"kind": "elements", "name": name})
+			total_found += 1
+		catalogue["elements"][name] += 1
+
+	for name in fp["compounds"]:
+		if not catalogue["compounds"].has(name):
+			catalogue["compounds"][name] = 0
+			new_items.append({"kind": "compounds", "name": name})
+			total_found += 1
+		catalogue["compounds"][name] += 1
+
+	var nearest_idx := -1
+	var nearest_distance := INF
+	for i in range(material_records.size()):
+		var d := fingerprint_distance(material_records[i]["fingerprint"], fp)
+		if d < nearest_distance:
+			nearest_distance = d
+			nearest_idx = i
+
+	var material_new := material_records.is_empty() or nearest_distance >= NOVELTY_THRESHOLD
+	var signature_id := ""
+	if material_new:
+		var seq := material_records.size() + 1
+		signature_id = "MAT-%06d" % seq
+		var label := String(report.get("classification", "unclassified material"))
+		var display_key := "%s · %s" % [label, signature_id]
+		material_records.append({
+			"id": signature_id,
+			"label": label,
+			"display_key": display_key,
+			"fingerprint": fp.duplicate(true),
+			"count": 1,
+			"first_position": report.get("position", Vector2.ZERO),
+		})
+		catalogue["materials"][display_key] = 1
+		new_items.append({"kind": "materials", "name": label, "signature_id": signature_id})
+		total_found += 1
+		if nearest_distance == INF:
+			nearest_distance = 1.0
+	else:
+		var rec: Dictionary = material_records[nearest_idx]
+		rec["count"] = int(rec.get("count", 0)) + 1
+		material_records[nearest_idx] = rec
+		signature_id = String(rec["id"])
+		catalogue["materials"][rec["display_key"]] = rec["count"]
+
+	var step_distance := 0.0
 	if not _last_fingerprint.is_empty():
-		dist = fingerprint_distance(_last_fingerprint, fp)
-	_farthest = maxf(_farthest, dist)
-	_last_fingerprint = fp
-	return { "new": new_items, "distance": dist, "total": total_found }
+		step_distance = fingerprint_distance(_last_fingerprint, fp)
+	_farthest = maxf(_farthest, step_distance)
+	_last_fingerprint = fp.duplicate(true)
+
+	return {
+		"new": new_items,
+		"distance": step_distance,
+		"novelty_distance": nearest_distance,
+		"material_new": material_new,
+		"material_signature": signature_id,
+		"total": total_found,
+	}
 
 static func fingerprint_distance(a: Dictionary, b: Dictionary) -> float:
-	var set_a := {}
-	var set_b := {}
-	for kind in KINDS:
-		for n in a[kind]:
-			set_a[n] = true
-		for n in b[kind]:
-			set_b[n] = true
-	var a_names := set_a.keys()
-	var b_names := set_b.keys()
-	if a_names.is_empty() and b_names.is_empty():
-		return 0.0
-	var intersection := 0
-	for n in a_names:
-		if set_b.has(n):
-			intersection += 1
-	var union := a_names.size() + b_names.size() - intersection
-	return 1.0 - float(intersection) / maxf(float(union), 1.0)
+	var d_elements := _dict_l1(a.get("element_vector", {}), b.get("element_vector", {})) * 0.5
+	var d_minerals := _dict_l1(a.get("mineral_vector", {}), b.get("mineral_vector", {})) * 0.5
+	var d_phases := _dict_l1(a.get("phase_vector", {}), b.get("phase_vector", {})) * 0.5
+
+	var ta: Dictionary = a.get("texture", {})
+	var tb: Dictionary = b.get("texture", {})
+	var grain_a := log(maxf(float(ta.get("grain_size_m", 1.0e-9)), 1.0e-9))
+	var grain_b := log(maxf(float(tb.get("grain_size_m", 1.0e-9)), 1.0e-9))
+	var d_texture := 0.0
+	d_texture += absf(float(ta.get("porosity", 0.0)) - float(tb.get("porosity", 0.0)))
+	d_texture += clampf(absf(grain_a - grain_b) / 10.0, 0.0, 1.0)
+	d_texture += absf(float(ta.get("weathering", 0.0)) - float(tb.get("weathering", 0.0)))
+	d_texture += absf(float(ta.get("oxidation", 0.0)) - float(tb.get("oxidation", 0.0)))
+	d_texture += absf(float(ta.get("hydration", 0.0)) - float(tb.get("hydration", 0.0)))
+	d_texture /= 5.0
+
+	var ea: Dictionary = a.get("environment", {})
+	var eb: Dictionary = b.get("environment", {})
+	var t1 := maxf(float(ea.get("temperature_k", 1.0)), 1.0)
+	var t2 := maxf(float(eb.get("temperature_k", 1.0)), 1.0)
+	var p1 := maxf(float(ea.get("pressure_pa", SciConstants.MIN_PRESSURE_PA)), SciConstants.MIN_PRESSURE_PA)
+	var p2 := maxf(float(eb.get("pressure_pa", SciConstants.MIN_PRESSURE_PA)), SciConstants.MIN_PRESSURE_PA)
+	var d_env := 0.5 * clampf(absf(log(t1 / t2)) / 2.5, 0.0, 1.0) 		+ 0.5 * clampf(absf(log(p1 / p2)) / 12.0, 0.0, 1.0)
+
+	return clampf(
+		0.34 * d_elements +
+		0.32 * d_minerals +
+		0.14 * d_phases +
+		0.12 * d_texture +
+		0.08 * d_env, 0.0, 1.0)
+
+static func _dict_l1(a: Dictionary, b: Dictionary) -> float:
+	var keys := {}
+	for k in a.keys():
+		keys[k] = true
+	for k in b.keys():
+		keys[k] = true
+	var total := 0.0
+	for k in keys.keys():
+		total += absf(float(a.get(k, 0.0)) - float(b.get(k, 0.0)))
+	return total
 
 func summary() -> Dictionary:
 	return {
 		"elements": catalogue["elements"].size(),
 		"compounds": catalogue["compounds"].size(),
-		"materials": catalogue["materials"].size(),
+		"materials": material_records.size(),
 		"total": total_found,
 		"farthest_distance": _farthest,
+		"novelty_threshold": NOVELTY_THRESHOLD,
 	}
