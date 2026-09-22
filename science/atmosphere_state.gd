@@ -1,4 +1,5 @@
 # atmosphere_state.gd
+# Local atmospheric column snapshot. SI units throughout.
 class_name AtmosphereState
 extends RefCounted
 
@@ -11,7 +12,13 @@ var elevation_m := 0.0
 var wind_speed_m_s := 0.0
 var wind_vector := Vector2.ZERO
 var relative_humidity := 0.0
-# Global reservoir bookkeeping, expressed as planet-mean kg/m². These are\n# copied into local columns unchanged; local pressure/elevation is separate.\nvar reservoir_column_mass := {}\nvar condensed_reservoir_column_mass := {}\n\nvar mean_molar_mass := 0.0289644
+
+# Planet-mean volatile bookkeeping copied into local columns unchanged.
+var reservoir_column_mass := {}            # species -> kg m^-2 retained total
+var condensed_reservoir_column_mass := {}  # species -> kg m^-2 outside gas phase
+var escape_diagnostics := {}               # species -> lambda / retention metadata
+
+var mean_molar_mass := 0.0289644
 var density := 1.225
 var scale_height := 8500.0
 var greenhouse_tau := 0.0
@@ -29,47 +36,55 @@ func recompute() -> void:
 	var mbar := 0.0
 	var xsum := 0.0
 	for s in species:
-		var xi: float = maxf(0.0, mole_fractions.get(s, 0.0))
+		var xi: float = maxf(0.0, float(mole_fractions.get(s, 0.0)))
 		mbar += SpeciesDatabase.molar_mass(s) * xi
 		xsum += xi
 	if xsum <= 0.0:
 		mean_molar_mass = 0.0289644
 	else:
 		mean_molar_mass = mbar / xsum
-	var t := SciConstants.safe_clamp(temperature, SciConstants.MIN_TEMPERATURE_K, SciConstants.MAX_TEMPERATURE_K)
-	total_pressure = SciConstants.safe_clamp(total_pressure, SciConstants.MIN_PRESSURE_PA, SciConstants.MAX_PRESSURE_PA)
-	density = minf(SciConstants.MAX_DENSITY, total_pressure * mean_molar_mass / (SciConstants.R_u * t))
+	var t := SciConstants.safe_clamp(
+		temperature, SciConstants.MIN_TEMPERATURE_K, SciConstants.MAX_TEMPERATURE_K)
+	total_pressure = SciConstants.safe_clamp(
+		total_pressure, SciConstants.MIN_PRESSURE_PA, SciConstants.MAX_PRESSURE_PA)
+	density = minf(
+		SciConstants.MAX_DENSITY,
+		total_pressure * mean_molar_mass / (SciConstants.R_u * t))
 	scale_height = SciConstants.R_u * t / maxf(mean_molar_mass * gravity, 1.0e-12)
 	greenhouse_tau = AtmosphereModel.greenhouse_depth(self)
 
 func partial_pressure(sym: String) -> float:
-	return mole_fractions.get(sym, 0.0) * total_pressure
+	return float(mole_fractions.get(sym, 0.0)) * total_pressure
 
 func mole_fraction(sym: String) -> float:
-	return mole_fractions.get(sym, 0.0)
+	return float(mole_fractions.get(sym, 0.0))
 
 func dominant_species() -> String:
 	var best := ""
 	var bx := -1.0
 	for s in species:
-		var x: float = mole_fractions.get(s, 0.0)
+		var x: float = float(mole_fractions.get(s, 0.0))
 		if x > bx:
 			bx = x
-			best = s
+			best = String(s)
 	return best
 
 func copy_state() -> AtmosphereState:
 	var a := AtmosphereState.new()
 	a.species = species.duplicate()
-	a.mole_fractions = mole_fractions.duplicate()
+	a.mole_fractions = mole_fractions.duplicate(true)
 	a.total_pressure = total_pressure
 	a.temperature = temperature
 	a.gravity = gravity
 	a.elevation_m = elevation_m
 	a.wind_speed_m_s = wind_speed_m_s
 	a.wind_vector = wind_vector
-	a.relative_humidity = relative_humidity\n\ta.reservoir_column_mass = reservoir_column_mass.duplicate(true)\n\ta.condensed_reservoir_column_mass = condensed_reservoir_column_mass.duplicate(true)\n\ta.greenhouse_fidelity = greenhouse_fidelity
-	a.notes = notes.duplicate()
+	a.relative_humidity = relative_humidity
+	a.reservoir_column_mass = reservoir_column_mass.duplicate(true)
+	a.condensed_reservoir_column_mass = condensed_reservoir_column_mass.duplicate(true)
+	a.escape_diagnostics = escape_diagnostics.duplicate(true)
+	a.greenhouse_fidelity = greenhouse_fidelity
+	a.notes = notes.duplicate(true)
 	a.recompute()
 	return a
 
