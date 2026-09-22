@@ -68,6 +68,14 @@ func init_random_planet(seed_value: int) -> void:
 	chunk_map.clear()
 	sample_history.clear()
 	last_sample_result = {}
+	current_label = ""
+	current_kind = ""
+	current_temperature = 0.0
+	current_air_temperature = 0.0
+	current_pressure = 0.0
+	current_gravity = planet.surface_gravity
+	current_elevation = 0.0
+	is_probe_open = false
 	planet_changed.emit()
 
 func get_chunk(cx: int, cy: int) -> Dictionary:
