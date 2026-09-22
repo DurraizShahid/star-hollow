@@ -39,7 +39,7 @@ func _rebuild() -> void:
 func _rebuild_ground() -> void:
 	if chunk.is_empty():
 		return
-	var image := Image.create(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(TEXTURE_SIZE, TEXTURE_SIZE, false, Image.FORMAT_RGBA8)
 	for py in range(TEXTURE_SIZE):
 		for px in range(TEXTURE_SIZE):
 			var u := (float(px) + 0.5) / float(TEXTURE_SIZE)
@@ -170,7 +170,7 @@ func _debug_color(record: Dictionary, field: String) -> Color:
 		"elevation": value = clampf(0.5 + boundary.elevation / 12000.0, 0.0, 1.0)
 		"ground_temperature": value = clampf((thermal.temperature - 40.0) / 700.0, 0.0, 1.0)
 		"air_temperature": value = clampf((atm.temperature - 40.0) / 700.0, 0.0, 1.0)
-		"pressure": value = clampf((log10(maxf(atm.total_pressure, 1.0e-4)) + 4.0) / 11.0, 0.0, 1.0)
+		"pressure": value = clampf(((log(maxf(atm.total_pressure, 1.0e-4)) / log(10.0)) + 4.0) / 11.0, 0.0, 1.0)
 		"albedo": value = surf.albedo
 		"iron": value = clampf(float(sub.elemental_mass_fraction.get("Fe", 0.0)) * 5.0, 0.0, 1.0)
 		"carbon": value = clampf(float(sub.elemental_mass_fraction.get("C", 0.0)) * 8.0, 0.0, 1.0)
