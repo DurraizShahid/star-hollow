@@ -1,0 +1,30 @@
+name: Godot Scientific Validation
+
+on:
+  push:
+    branches:
+      - feat/science-simulation-completion
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.7.2
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Godot version
+        run: godot --version
+
+      - name: Import and parse project
+        run: godot --headless --path . --editor --quit-after 3
+
+      - name: Scientific unit tests
+        run: godot --headless --path . --script res://tests/run_tests.gd
+
+      - name: Scientific smoke tests
+        run: godot --headless --path . --script res://tests/smoke_science.gd
