@@ -4,8 +4,14 @@ on:
   push:
     branches:
       - feat/science-simulation-completion
+    paths-ignore:
+      - 'docs/**'
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: godot-validation-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
