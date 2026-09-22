@@ -9,8 +9,8 @@ signal sample_taken(result: Dictionary)
 const CHUNK_LOAD_RADIUS := 2
 const DEBUG_FIELDS := [
 	"normal", "elevation", "ground_temperature", "air_temperature", "pressure",
-	"albedo", "iron", "carbon", "sulfur", "sediment", "weathering",
-	"vegetation", "coupling"
+	"albedo", "density", "water", "dominant_mineral", "iron", "carbon", "sulfur",
+	"sediment", "weathering", "vegetation_suitability", "wind", "province", "coupling"
 ]
 
 var planet: PlanetParameters
@@ -188,12 +188,17 @@ func debug_value_for_cell(cell: Dictionary, field: String = "") -> float:
 		"air_temperature": return atm.temperature
 		"pressure": return log(maxf(atm.total_pressure, SciConstants.MIN_PRESSURE_PA))
 		"albedo": return surf.albedo
+		"density": return sub.bulk_density
+		"water": return maxf(surf.liquid_cover, surf.frost_cover)
+		"dominant_mineral": return 1.0
 		"iron": return float(sub.elemental_mass_fraction.get("Fe", 0.0))
 		"carbon": return float(sub.elemental_mass_fraction.get("C", 0.0))
 		"sulfur": return float(sub.elemental_mass_fraction.get("S", 0.0))
 		"sediment": return surf.sediment_cover
 		"weathering": return sub.weathering_index
-		"vegetation": return surf.vegetation_cover
+		"vegetation_suitability": return float(cell.get("biosphere", {}).get("habitability", 0.0))
+		"wind": return atm.wind_speed_m_s
+		"province": return 1.0
 		"coupling": return 1.0 if cell.get("coupling", {}).get("converged", false) else 0.0
 	return 0.0
 
