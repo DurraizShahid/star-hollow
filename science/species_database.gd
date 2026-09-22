@@ -146,16 +146,16 @@ static func has_triple(sym: String) -> bool:
 static func has_critical(sym: String) -> bool:
 	return _SPECIES[sym]["t_crit"] != null
 
-static func triple_temperature(sym: String) -> float:
+static func triple_temperature(sym: String) -> Variant:
 	return _SPECIES[sym]["t_triple"]
 
-static func triple_pressure(sym: String) -> float:
+static func triple_pressure(sym: String) -> Variant:
 	return _SPECIES[sym]["p_triple"]
 
-static func critical_temperature(sym: String) -> float:
+static func critical_temperature(sym: String) -> Variant:
 	return _SPECIES[sym]["t_crit"]
 
-static func critical_pressure(sym: String) -> float:
+static func critical_pressure(sym: String) -> Variant:
 	return _SPECIES[sym]["p_crit"]
 
 static func h_fusion(sym: String) -> float:
@@ -170,17 +170,20 @@ static func h_sublimation(sym: String) -> float:
 static func melting_slope_k_per_pa(sym: String) -> float:
 	return _SPECIES[sym]["melting_slope"]
 
-static func liquid_density(sym: String) -> float:
+static func liquid_density(sym: String) -> Variant:
 	return _SPECIES[sym]["density_liquid"]
 
-static func solid_density(sym: String) -> float:
+static func solid_density(sym: String) -> Variant:
 	return _SPECIES[sym]["density_solid"]
 
 static func is_greenhouse_contributor(sym: String) -> bool:
 	return sym in ["H2O", "CO2", "CH4", "NH3", "SO2", "CO", "N2", "H2"]
 
 static func is_condensable(sym: String) -> bool:
-	return _SPECIES[sym]["t_triple"] != null or _SPECIES[sym]["t_crit"] != null
+	# The current phase/saturation implementation needs a triple-point anchor.
+	# Species with only a critical point in the database remain gases until
+	# additional low-temperature phase data is added.
+	return _SPECIES[sym]["t_triple"] != null
 
 static func pretty_name(sym: String) -> String:
 	return _SPECIES[sym]["name"]
