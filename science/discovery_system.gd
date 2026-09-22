@@ -191,7 +191,7 @@ func export_state() -> Dictionary:
 	var records: Array = []
 	for record in material_records:
 		var p: Vector2 = record.get("first_position", Vector2.ZERO)
-		var clean := record.duplicate(true)
+		var clean := record.duplicate(true) as Dictionary
 		clean["first_position"] = [p.x, p.y]
 		records.append(clean)
 	return {

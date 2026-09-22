@@ -19,6 +19,9 @@ config/main_scene="res://game/main.tscn"
 [autoload]
 
 GameState="res://game/game_state.gd"
+SaveSystem="res://game/save_system.gd"
+ProceduralChunkRenderer="res://game/world/procedural_chunk_renderer.gd"
+ProbePopup="res://game/ui/probe_popup.gd"
 
 [display]
 
