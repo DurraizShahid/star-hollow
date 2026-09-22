@@ -120,7 +120,11 @@ static func _flux_latent(density: float, wind: float, t_surf: float, t_atm: floa
 	var v := surf.liquid_species if surf.liquid_cover > surf.frost_cover else surf.frost_species
 	if v == "" or not SpeciesDatabase.has(v):
 		return 0.0
-	var p_sat := PhaseSolver.saturation_liquid(v, t_surf) 		if t_surf >= SpeciesDatabase.triple_temperature(v) 		else PhaseSolver.saturation_over_solid(v, t_surf)
+	var triple_value: Variant = SpeciesDatabase.triple_temperature(v)
+	if triple_value == null:
+		return 0.0
+	var triple_t := float(triple_value)
+	var p_sat := PhaseSolver.saturation_liquid(v, t_surf) if t_surf >= triple_t else PhaseSolver.saturation_over_solid(v, t_surf)
 	var p_atm := atm.partial_pressure(v) if atm != null and atm.species.has(v) else 0.0
 	var mm := SpeciesDatabase.molar_mass(v)
 	var q_sat := p_sat * mm / (SciConstants.R_u * maxf(t_surf, 1.0))
@@ -128,7 +132,7 @@ static func _flux_latent(density: float, wind: float, t_surf: float, t_atm: floa
 	var deficit := clampf(q_sat - q_atm, 0.0, 1.0)
 	if deficit <= 0.0:
 		return 0.0
-	var phase := "liquid_to_vapor" if t_surf >= SpeciesDatabase.triple_temperature(v) else "solid_to_vapor"
+	var phase := "liquid_to_vapor" if t_surf >= triple_t else "solid_to_vapor"
 	return C_E * density * wind * deficit * Thermodynamics.latent_heat(v, phase, t_surf)
 
 static func _flux_conductive(t_surface: float, t_deep: float, substrate: SubstrateState) -> float:
@@ -143,7 +147,8 @@ static func _phase_albedo(t: float, surf: SurfaceState) -> float:
 	if surf.liquid_cover > 0.05:
 		a = lerpf(a, 0.07, clampf(surf.liquid_cover, 0.0, 1.0))
 	if surf.frost_cover > 0.05 and surf.frost_species != "":
-		var cold := t < SpeciesDatabase.triple_temperature(surf.frost_species)
+		var triple_value: Variant = SpeciesDatabase.triple_temperature(surf.frost_species)
+		var cold: bool = triple_value != null and t < float(triple_value)
 		a = maxf(a, lerpf(0.45, 0.78, 1.0 if cold else 0.3) * surf.frost_cover)
 	return clampf(a, 0.03, 0.92)
 
