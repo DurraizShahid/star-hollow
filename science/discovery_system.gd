@@ -185,3 +185,37 @@ func summary() -> Dictionary:
 		"farthest_distance": _farthest,
 		"novelty_threshold": NOVELTY_THRESHOLD,
 	}
+
+
+func export_state() -> Dictionary:
+	var records: Array = []
+	for record in material_records:
+		var p: Vector2 = record.get("first_position", Vector2.ZERO)
+		var clean := record.duplicate(true)
+		clean["first_position"] = [p.x, p.y]
+		records.append(clean)
+	return {
+		"catalogue": catalogue.duplicate(true),
+		"material_records": records,
+		"total_found": total_found,
+		"farthest_distance": _farthest,
+	}
+
+func import_state(data: Dictionary) -> void:
+	catalogue = data.get("catalogue", {"elements": {}, "compounds": {}, "materials": {}}).duplicate(true)
+	for kind in KINDS:
+		if not catalogue.has(kind):
+			catalogue[kind] = {}
+	material_records.clear()
+	for stored in data.get("material_records", []):
+		var record: Dictionary = stored.duplicate(true)
+		var p = record.get("first_position", [0.0, 0.0])
+		if p is Array and p.size() >= 2:
+			record["first_position"] = Vector2(float(p[0]), float(p[1]))
+		else:
+			record["first_position"] = Vector2.ZERO
+		material_records.append(record)
+	total_found = int(data.get("total_found",
+		catalogue["elements"].size() + catalogue["compounds"].size() + material_records.size()))
+	_farthest = float(data.get("farthest_distance", 0.0))
+	_last_fingerprint = {}
