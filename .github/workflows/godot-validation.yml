@@ -28,13 +28,13 @@ jobs:
         run: godot --version
 
       - name: Import and parse project
-        run: godot --headless --path . --editor --quit-after 3
+        run: bash .github/scripts/godot_check.sh godot --headless --path . --editor --quit-after 3
 
       - name: Boot main scene
-        run: timeout 120 godot --headless --path . --quit-after 1
+        run: bash .github/scripts/godot_check.sh timeout 120 godot --headless --path . --quit-after 1
 
       - name: Scientific unit tests
-        run: godot --headless --path . --script res://tests/run_tests.gd
+        run: bash .github/scripts/godot_check.sh godot --headless --path . --script res://tests/run_tests.gd
 
       - name: Scientific smoke tests
-        run: godot --headless --path . --script res://tests/smoke_science.gd
+        run: bash .github/scripts/godot_check.sh godot --headless --path . --script res://tests/smoke_science.gd
