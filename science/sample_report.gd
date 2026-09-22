@@ -77,7 +77,10 @@ static func build(cell: Dictionary, planet: PlanetParameters, solver, position: 
 			"roughness": surface.roughness,
 			"humidity": surface.humidity,
 			"liquid_species": surface.liquid_species,
+			"liquid_depth_m": surface.liquid_depth_m,
 			"frost_species": surface.frost_species,
+			"frost_equivalent_depth_m": surface.frost_equivalent_depth_m,
+			"water_table_depth_m": surface.water_table_depth_m,
 			"covers": {
 				"rock": surface.rock_cover,
 				"boulder": surface.boulder_cover,
@@ -126,10 +129,16 @@ static func build(cell: Dictionary, planet: PlanetParameters, solver, position: 
 			"wind_m_s": atm.wind_speed_m_s,
 			"wind_vector": atm.wind_vector,
 			"relative_humidity": atm.relative_humidity,
+			"reservoir_column_mass_kg_m2": atm.reservoir_column_mass.duplicate(true),
+			"condensed_reservoir_column_mass_kg_m2": atm.condensed_reservoir_column_mass.duplicate(true),
 			"notes": atm.notes.duplicate(),
 		},
 		"energy": thermal.energies(),
 		"biosphere": cell.get("biosphere", {}),
+		"hydrosphere": {
+			"mean_equivalent_depth_m": solver.hydrosphere.mean_equivalent_depth_m.duplicate(true),
+			"sea_levels_m": solver.hydrosphere.sea_levels_m.duplicate(true),
+		},
 		"geology": {
 			"province": boundary.province_primary,
 			"secondary_province": boundary.province_secondary,
