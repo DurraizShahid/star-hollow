@@ -8,7 +8,9 @@ const DEFAULT_PATH := "user://star_hollow_save.json"
 static func save_game(gs, path: String = DEFAULT_PATH) -> bool:
 	if gs == null or gs.planet == null:
 		return false
-	var player_pos := gs.player.global_position if gs.player != null else Vector2.ZERO
+	var player_pos := Vector2.ZERO
+	if gs.player != null:
+		player_pos = gs.player.global_position
 	var payload := {
 		"format_version": 1,
 		"generator_version": SciConstants.WORLD_GENERATOR_VERSION,
