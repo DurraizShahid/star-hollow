@@ -8,6 +8,7 @@ This file is intentionally conservative. A green test suite means the implementa
 - equilibrium-temperature reference;
 - ideal-gas atmospheric density and scale height;
 - hydrostatic local pressure approximation;
+- Jeans-parameter atmospheric-retention diagnostic;
 - partial pressures and mean molar mass;
 - radiative, sensible, latent and conductive energy terms;
 - pressure-aware pure-species phase classification;
@@ -28,7 +29,8 @@ This file is intentionally conservative. A green test suite means the implementa
 - oxidation/hydration indices;
 - surface-cover fraction from atmospheric condensation;
 - representative-terrain volume solve for condensed reservoirs;
-- Earth-like vegetation suitability.
+- Earth-like vegetation suitability;
+- long-timescale atmospheric retention from a Jeans-escape heuristic.
 
 ## Heuristic
 - many geological enrichment amplitudes;
@@ -42,7 +44,7 @@ This file is intentionally conservative. A green test suite means the implementa
 - clouds with microphysics;
 - line-by-line radiative transfer;
 - photochemistry;
-- atmospheric escape/retention over geologic time;
+- hydrodynamic escape, sputtering, ion pickup and detailed upper-atmosphere evolution;
 - tectonic plate evolution;
 - river routing, watershed/drainage networks and groundwater flow;
 - dynamic precipitation/evaporation mass transport between cells;
