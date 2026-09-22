@@ -131,6 +131,7 @@ static func build(cell: Dictionary, planet: PlanetParameters, solver, position: 
 			"relative_humidity": atm.relative_humidity,
 			"reservoir_column_mass_kg_m2": atm.reservoir_column_mass.duplicate(true),
 			"condensed_reservoir_column_mass_kg_m2": atm.condensed_reservoir_column_mass.duplicate(true),
+			"escape_diagnostics": atm.escape_diagnostics.duplicate(true),
 			"notes": atm.notes.duplicate(),
 		},
 		"energy": thermal.energies(),
@@ -162,6 +163,7 @@ static func build(cell: Dictionary, planet: PlanetParameters, solver, position: 
 			"confidence": {
 				"orbital_gravity": SciConstants.FIDELITY_NAME[SciConstants.FIDELITY_REFERENCE],
 				"local_pressure_density": SciConstants.FIDELITY_NAME[SciConstants.FIDELITY_SIMPLIFIED_PHYSICAL],
+				"atmospheric_escape": SciConstants.FIDELITY_NAME[SciConstants.FIDELITY_HEURISTIC],
 				"surface_temperature": SciConstants.FIDELITY_NAME[SciConstants.FIDELITY_SIMPLIFIED_PHYSICAL],
 				"phase_boundaries": SciConstants.FIDELITY_NAME[SciConstants.FIDELITY_THERMODYNAMIC],
 				"mineral_assemblage": "normative / stoichiometric; not Gibbs equilibrium",
