@@ -27,6 +27,9 @@ var organic_cover := 0.0
 var vegetation_cover := 0.0
 var vegetation_style := ""
 
+var base_albedo := 0.2
+var base_emissivity := 0.92
+var base_roughness := 0.4
 var albedo := 0.2
 var emissivity := 0.92
 var roughness := 0.4
