@@ -364,6 +364,6 @@ static func describe_cell(record: Dictionary) -> String:
 	var s: SurfaceState = record["surface"]
 	var t: ThermalState = record["thermal"]
 	var a: AtmosphereState = record["atmosphere"]
-	return "(%.0f,%.0f m) %s T=%.1fK P=%.3gPa liq=%.2f frost=%.2f" % [
+	return "(%.0f,%.0f m) %s T=%.1fK P=%.3ePa liq=%.2f frost=%.2f" % [
 		record["x"], record["y"], record["classification"].get("label", "?"),
 		t.temperature, a.total_pressure, s.liquid_cover, s.frost_cover]
