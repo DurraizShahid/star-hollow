@@ -1,6 +1,6 @@
 # Star Hollow Scientific Model
 
-Generator version: **3**. Internal scientific quantities are SI unless a field says otherwise.
+Generator version: **4**. Internal scientific quantities are SI unless a field says otherwise.
 
 Star Hollow follows one directional rule: **science state is authoritative; graphics are a derived view**.
 
@@ -42,6 +42,8 @@ T_eq = [ S (1-A) / (4 ε σ) ]^(1/4)
 This is an initialization/reference temperature, not the final surface temperature.
 
 ## Atmosphere
+
+Before atmospheric pressure is solved, the accessible volatile inventory is attenuated by a documented Jeans-escape retention approximation based on molecular mass, gravity, radius, upper-atmosphere temperature proxy and planetary age. Reference presets may override present-day pressure/composition/mean atmospheric temperature for validation.
 
 Mean molar mass:
 
