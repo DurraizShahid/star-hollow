@@ -2,6 +2,8 @@
 class_name GameState
 extends Node
 
+const SaveSystemScript := preload("res://game/save_system.gd")
+
 signal debug_field_changed(field: String)
 signal planet_changed()
 signal sample_taken(result: Dictionary)
@@ -212,8 +214,8 @@ static func _parse_chunk_key(key: String) -> Vector2i:
 	return Vector2i(int(parts[0]), int(parts[1]))
 
 
-func save_game(path: String = SaveSystem.DEFAULT_PATH) -> bool:
-	return SaveSystem.save_game(self, path)
+func save_game(path: String = SaveSystemScript.DEFAULT_PATH) -> bool:
+	return SaveSystemScript.save_game(self, path)
 
-func load_saved_game(path: String = SaveSystem.DEFAULT_PATH) -> Dictionary:
-	return SaveSystem.load_game(self, path)
+func load_saved_game(path: String = SaveSystemScript.DEFAULT_PATH) -> Dictionary:
+	return SaveSystemScript.load_game(self, path)
