@@ -48,14 +48,23 @@ func _update_streaming(force: bool) -> void:
 		return
 	_player_cx = cx
 	_player_cy = cy
+	# First load the complete science neighborhood. Rendering is a second pass so
+	# every chunk can interpolate across already-available neighbor cells.
+	var desired := {}
 	for dcx in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
 		for dcy in range(-CHUNK_LOAD_RADIUS, CHUNK_LOAD_RADIUS + 1):
 			var tcx := cx + dcx
 			var tcy := cy + dcy
 			var key := GameState._chunk_key(tcx, tcy)
-			var chunk := _gs.load_chunk(tcx, tcy)
-			if not _visual_chunks.has(key):
-				_create_chunk_visual(key, chunk)
+			desired[key] = _gs.load_chunk(tcx, tcy)
+	for key in desired.keys():
+		if not _visual_chunks.has(key):
+			_create_chunk_visual(key, desired[key])
+	# Previously outer-edge renderers can now see newly streamed neighbors.
+	for key in _visual_chunks.keys():
+		var existing: ProceduralChunkRenderer = _visual_chunks[key]
+		if is_instance_valid(existing):
+			existing.refresh_ground()
 	var removed := _gs.unload_distant_chunks(cx, cy)
 	for key in removed:
 		if _visual_chunks.has(key):
@@ -68,7 +77,7 @@ func _create_chunk_visual(key: String, chunk: Dictionary) -> void:
 	var renderer := ProceduralChunkRenderer.new()
 	renderer.name = "chunk_%s" % key
 	_chunk_layer.add_child(renderer)
-	renderer.configure(chunk, _gs.planet.seed, _gs.debug_field)
+	renderer.configure(chunk, _gs.planet.seed, _gs.debug_field, _gs)
 	_visual_chunks[key] = renderer
 
 func _make_player() -> void:
