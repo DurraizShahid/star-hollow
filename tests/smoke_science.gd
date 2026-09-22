@@ -20,6 +20,7 @@ const PATHS := [
 	"res://science/thermodynamics.gd",
 	"res://science/phase_solver.gd",
 	"res://science/atmosphere_state.gd",
+	"res://science/atmospheric_escape.gd",
 	"res://science/atmosphere_model.gd",
 	"res://science/hydrosphere_model.gd",
 	"res://science/thermal_state.gd",
