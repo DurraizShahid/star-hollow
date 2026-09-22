@@ -14,6 +14,7 @@ const PATHS := [
 	"res://science/phase_solver.gd",
 	"res://science/atmosphere_state.gd",
 	"res://science/atmosphere_model.gd",
+	"res://science/hydrosphere_model.gd",
 	"res://science/thermal_state.gd",
 	"res://science/thermal_model.gd",
 	"res://science/substrate_state.gd",
@@ -69,6 +70,15 @@ func _initialize() -> void:
 	var high := AtmosphereModel.local_state(atm, 1000.0, atm.temperature)
 	_check("pressure decreases with elevation", high.total_pressure < atm.total_pressure)
 	_check("hydrostatic 1 km pressure ratio plausible", high.total_pressure / atm.total_pressure > 0.82 and high.total_pressure / atm.total_pressure < 0.94)
+	_check("Earth H2O condensed reservoir retained", float(atm.condensed_reservoir_column_mass.get("H2O", 0.0)) > 100.0)
+	var hydro := solver.hydrosphere
+	_check("Earth H2O hydrosphere level solved", hydro.sea_levels_m.has("H2O"))
+	var earth_water_depth := float(hydro.mean_equivalent_depth_m.get("H2O", 0.0))
+	_check("Earth H2O global-equivalent depth plausible", earth_water_depth > 1000.0 and earth_water_depth < 5000.0)
+	var sea_level := float(hydro.sea_levels_m.get("H2O", 0.0))
+	var sea_atm := AtmosphereModel.local_state(atm, sea_level - 100.0, 288.0)
+	var sea_state := hydro.state_at(sea_level - 100.0, 288.0, sea_atm)
+	_check("sub-sea-level Earth reservoir is liquid", sea_state.get("species","") == "H2O" and sea_state.get("phase","") == PhaseSolver.PHASE_LIQUID and float(sea_state.get("cover",0.0)) > 0.9)
 
 	# Phase reference points.
 	_check("H2O triple T", absf(SpeciesDatabase.triple_temperature("H2O") - 273.16) < 0.01)
@@ -117,6 +127,8 @@ func _initialize() -> void:
 	_check("sample pressure == LOCAL cell atmosphere", absf(float(sample["pressure"]) - local_atm.total_pressure) < 1e-9)
 	_check("sample has mass and mole composition", not sample["elements_mass_pct"].is_empty() and not sample["elements_mole_pct"].is_empty())
 	_check("sample exposes convergence metadata", sample["model"].has("coupling"))
+	_check("sample exposes hydrosphere metadata", sample.has("hydrosphere") and sample["hydrosphere"]["sea_levels_m"].has("H2O"))
+	_check("sample exposes reservoir depths", sample["surface"].has("liquid_depth_m") and sample["surface"].has("water_table_depth_m"))
 
 	# Quantitative material fingerprints.
 	var fp := DiscoverySystem.fingerprint(sample)
