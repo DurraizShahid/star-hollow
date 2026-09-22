@@ -133,7 +133,7 @@ static func _reservoir_column_pressure(planet: PlanetParameters) -> Dictionary:
 		out[s] = planet.surface_gravity * column
 	return out
 
-static func _reference_temperature(planet: PlanetParameters) -> float:
+static func _attach_reservoir_metadata(atm: AtmosphereState, would_be_pressure: Dictionary) -> void:\n\tatm.reservoir_column_mass.clear()\n\tatm.condensed_reservoir_column_mass.clear()\n\tfor s in would_be_pressure.keys():\n\t\tvar total_column := float(would_be_pressure[s]) / maxf(atm.gravity, 1.0e-12)\n\t\tvar gas_column := atm.partial_pressure(s) / maxf(atm.gravity, 1.0e-12)\n\t\tatm.reservoir_column_mass[s] = total_column\n\t\tatm.condensed_reservoir_column_mass[s] = maxf(0.0, total_column - gas_column)\n\nstatic func _reference_temperature(planet: PlanetParameters) -> float:
 	var tau_guess := 0.0
 	for s in planet.volatile_inventory.keys():
 		tau_guess += float(GHEIGHT_WEIGHTS.get(s, 0.0)) * float(planet.volatile_inventory.get(s, 0.0))
