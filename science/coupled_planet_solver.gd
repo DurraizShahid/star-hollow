@@ -290,8 +290,8 @@ func _phase_covers(surface: SurfaceState, thermal: ThermalState, atm: Atmosphere
 			surface.frost_species = best_species
 		_:
 			return
-	surface.phase_notes.append("%s %s stable; condensed column %.3g kg/m2" % [
-		best_species, phase.get("phase", "?"), best_mass])
+	surface.phase_notes.append("%s %s stable; condensed column %s kg/m2" % [
+		best_species, phase.get("phase", "?"), String.num_scientific(best_mass)])
 	surface.humidity = atm.relative_humidity
 
 func _apply_hydrosphere(surface: SurfaceState, boundary: GeologyModel.CellBoundary,
