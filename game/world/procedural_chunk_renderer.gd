@@ -188,15 +188,24 @@ func _debug_color(record: Dictionary, field: String) -> Color:
 		"air_temperature": value = clampf((atm.temperature - 40.0) / 700.0, 0.0, 1.0)
 		"pressure": value = clampf(((log(maxf(atm.total_pressure, 1.0e-4)) / log(10.0)) + 4.0) / 11.0, 0.0, 1.0)
 		"albedo": value = surf.albedo
+		"density": value = clampf(sub.bulk_density / 6000.0, 0.0, 1.0)
+		"water": value = maxf(surf.liquid_cover, surf.frost_cover)
+		"dominant_mineral": return _category_color(sub.dominant_mineral())
 		"iron": value = clampf(float(sub.elemental_mass_fraction.get("Fe", 0.0)) * 5.0, 0.0, 1.0)
 		"carbon": value = clampf(float(sub.elemental_mass_fraction.get("C", 0.0)) * 8.0, 0.0, 1.0)
 		"sulfur": value = clampf(float(sub.elemental_mass_fraction.get("S", 0.0)) * 12.0, 0.0, 1.0)
 		"sediment": value = surf.sediment_cover
 		"weathering": value = sub.weathering_index
-		"vegetation": value = surf.vegetation_cover
+		"vegetation_suitability": value = clampf(float(record.get("biosphere", {}).get("habitability", 0.0)), 0.0, 1.0)
+		"wind": value = clampf(atm.wind_speed_m_s / 5.0, 0.0, 1.0)
+		"province": return _category_color(boundary.province_primary)
 		"coupling": return Color(0.15, 0.75, 0.25) if record.get("coupling", {}).get("converged", false) else Color(0.85, 0.16, 0.12)
 		_: return _mineral_mix_color(sub)
 	return _scientific_ramp(value)
+
+func _category_color(label: String) -> Color:
+	var h := abs(label.hash()) % 360
+	return Color.from_hsv(float(h) / 360.0, 0.62, 0.88)
 
 func _scientific_ramp(v: float) -> Color:
 	v = clampf(v, 0.0, 1.0)
