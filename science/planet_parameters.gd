@@ -76,6 +76,9 @@ var rotation_period := 24.0 * 3600.0                            # s
 var mass := SciConstants.EARTH_MASS                             # kg
 var radius := SciConstants.EARTH_RADIUS                         # m
 var age := 4.54e9                                               # years
+var biosphere_enabled := false                                  # inhabitance is explicit; habitability is calculated separately
+var atmosphere_pressure_override_pa := -1.0                     # <=0 means derive from volatile reservoir
+var atmosphere_mole_fraction_override := {}                     # validation/preset atmosphere
 var geothermal_flux := SciConstants.EARTH_GEOTHERMAL_FLUX       # W m^-2
 
 # inventories (mass fractions of rock + volatiles)
@@ -152,8 +155,11 @@ static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParam
 			p.volatility_fraction = 0.006
 			p.degas_fraction = 0.9
 			p.albedo_initial = 0.30
+			p.biosphere_enabled = true
+			p.atmosphere_pressure_override_pa = SciConstants.EARTH_PRESSURE
+			p.atmosphere_mole_fraction_override = {"N2":0.7808,"O2":0.2094,"Ar":0.0093,"CO2":0.0004,"H2O":0.0001}
 		"marslike":
-			_set_basic(p, "Mars-like", SciConstants.SOLAR_LUMINOSITY * (0.65), 5772.0, SciConstants.AU_M * 1.52, 25.19, SciConstants.EARTH_MASS * 0.107)
+			_set_basic(p, "Mars-like", SciConstants.SOLAR_LUMINOSITY, 5772.0, SciConstants.AU_M * 1.52, 25.19, SciConstants.EARTH_MASS * 0.107)
 			p.radius = SciConstants.EARTH_RADIUS * 0.532
 			p.mean_density = p.mass / ((4.0 / 3.0) * PI * pow(p.radius, 3.0))
 			p.age = 4.6e9
@@ -162,8 +168,10 @@ static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParam
 			p.volatility_fraction = 0.004
 			p.degas_fraction = 0.06
 			p.albedo_initial = 0.25
+			p.atmosphere_pressure_override_pa = SciConstants.MARS_PRESSURE
+			p.atmosphere_mole_fraction_override = {"CO2":0.9532,"N2":0.027,"Ar":0.016,"O2":0.0013,"CO":0.0008}
 		"titanlike":
-			_set_basic(p, "Titan-like", SciConstants.SOLAR_LUMINOSITY * 0.06, 4400.0, SciConstants.AU_M * 9.54, 26.73, SciConstants.EARTH_MASS * 0.0225)
+			_set_basic(p, "Titan-like", SciConstants.SOLAR_LUMINOSITY, 5772.0, SciConstants.AU_M * 9.54, 26.73, SciConstants.EARTH_MASS * 0.0225)
 			p.radius = SciConstants.EARTH_RADIUS * 0.404
 			p.mean_density = p.mass / ((4.0 / 3.0) * PI * pow(p.radius, 3.0))
 			p.age = 4.5e9
@@ -172,8 +180,10 @@ static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParam
 			p.volatility_fraction = 0.35
 			p.degas_fraction = 0.9
 			p.albedo_initial = 0.22
+			p.atmosphere_pressure_override_pa = SciConstants.TITAN_PRESSURE
+			p.atmosphere_mole_fraction_override = {"N2":0.984,"CH4":0.014,"H2":0.001,"CO":0.001}
 		"plutolike":
-			_set_basic(p, "Pluto-like", SciConstants.SOLAR_LUMINOSITY * 0.0002, 2900.0, SciConstants.AU_M * 39.5, 57.0, SciConstants.EARTH_MASS * 0.0022)
+			_set_basic(p, "Pluto-like", SciConstants.SOLAR_LUMINOSITY, 5772.0, SciConstants.AU_M * 39.5, 57.0, SciConstants.EARTH_MASS * 0.0022)
 			p.radius = SciConstants.EARTH_RADIUS * 0.185
 			p.mean_density = p.mass / ((4.0 / 3.0) * PI * pow(p.radius, 3.0))
 			p.age = 4.6e9
@@ -182,6 +192,8 @@ static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParam
 			p.volatility_fraction = 0.55
 			p.degas_fraction = 0.55
 			p.albedo_initial = 0.50
+			p.atmosphere_pressure_override_pa = SciConstants.PLUTO_PRESSURE
+			p.atmosphere_mole_fraction_override = {"N2":0.98,"CH4":0.015,"CO":0.005}
 		"hot_lava":
 			_set_basic(p, "Hot Lava", SciConstants.SOLAR_LUMINOSITY * 4.0, 6200.0, 0.4 * SciConstants.AU_M, 5.0, SciConstants.EARTH_MASS * 0.6)
 			p.radius = SciConstants.EARTH_RADIUS * pow(0.6, 0.27)
@@ -264,8 +276,8 @@ func _finalize() -> void:
 func _recompute_derived() -> void:
 	surface_gravity = SciConstants.G * mass / (radius * radius)
 	mean_density = mass / ((4.0 / 3.0) * PI * pow(radius, 3.0))
-	var dist := semi_major_axis * (1.0 - eccentricity * eccentricity)
-	stellar_flux = stellar_luminosity / (4.0 * PI * dist * dist)
+	var ecc_factor := sqrt(maxf(1.0 - eccentricity * eccentricity, 1.0e-9))
+	stellar_flux = stellar_luminosity / (4.0 * PI * semi_major_axis * semi_major_axis * ecc_factor)
 	equilibrium_temperature = pow(stellar_flux * (1.0 - albedo_initial) / (4.0 * 1.0 * SciConstants.SIGMA), 0.25)
 
 ## Call after fields are set to refresh derived quantities.
