@@ -88,6 +88,8 @@ func _initialize() -> void:
 	_check("CO2 below triple pressure cannot be liquid", PhaseSolver.phase_of("CO2", 220.0, 4.0e5)["phase"] != PhaseSolver.PHASE_LIQUID)
 	_check("H2O 300 K 1 bar is liquid", PhaseSolver.phase_of("H2O", 300.0, 1.0e5)["phase"] == PhaseSolver.PHASE_LIQUID)
 	_check("CO2 350 K 100 bar is supercritical", PhaseSolver.phase_of("CO2", 350.0, 1.0e7)["phase"] == PhaseSolver.PHASE_SUPERCRITICAL)
+	_check("He has no supported condensed-phase curve", not SpeciesDatabase.is_condensable("He"))
+	_check("nullable triple point accessor is safe", SpeciesDatabase.triple_temperature("He") == null)
 
 	# Normative chemistry conservation / bounds.
 	var budget := {"Si":0.21,"O":0.45,"Mg":0.05,"Fe":0.08,"Al":0.06,"Ca":0.05,"K":0.02,"Na":0.02,"Ti":0.005,"S":0.003,"C":0.001}
@@ -120,6 +122,13 @@ func _initialize() -> void:
 	_check("substrate permeability nonnegative", sub.permeability_m2 >= 0.0)
 	_check("thermal diffusivity physical", sub.thermal_diffusivity > 0.0 and sub.thermal_diffusivity < 1e-3)
 	_check("energy residual finite", is_finite(thermal.residual_w_m2))
+	var surf: SurfaceState = rec["surface"]
+	solver._apply_fast_surface_feedback(surf)
+	var albedo_once := surf.albedo
+	var rough_once := surf.roughness
+	solver._apply_fast_surface_feedback(surf)
+	_check("surface feedback albedo is iteration-idempotent", absf(surf.albedo - albedo_once) < 1e-12)
+	_check("surface feedback roughness is iteration-idempotent", absf(surf.roughness - rough_once) < 1e-12)
 
 	var sample := SampleReport.build(rec, earth, solver, rec["position"])
 	_check("sample position == record", sample["position"] == rec["position"])
@@ -145,6 +154,8 @@ func _initialize() -> void:
 	var second := ds.process(sample)
 	_check("first sample creates material signature", first["material_new"] == true)
 	_check("identical sample reuses material signature", second["material_new"] == false and second["material_signature"] == first["material_signature"])
+	_check("discovery result returns quantitative fingerprint", first.has("fingerprint") and first["fingerprint"].has("element_vector"))
+	_check("sample exposes confidence metadata", sample["model"].has("confidence") and sample["model"]["confidence"].has("surface_temperature"))
 
 	print("== run_tests: %d assertions, %d failures ==" % [asserts, failures])
 	quit(1 if failures > 0 else 0)
