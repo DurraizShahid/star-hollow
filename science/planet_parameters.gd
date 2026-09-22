@@ -153,7 +153,9 @@ static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParam
 			p.age = 4.54e9
 			p.geothermal_flux = 0.065
 			_apply_composition(p, "terrestrial", 0.55)
-			p.volatility_fraction = 0.006
+			# Calibrated so the terrestrial volatile split gives an Earth-order
+			# H2O surface reservoir instead of tens of kilometres of global water.
+			p.volatility_fraction = 0.00042
 			p.degas_fraction = 0.9
 			p.albedo_initial = 0.30
 			p.biosphere_enabled = true
