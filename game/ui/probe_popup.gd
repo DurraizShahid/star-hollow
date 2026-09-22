@@ -121,9 +121,20 @@ func _format_report(result: Dictionary) -> String:
 		if float(covers[k]) > 0.001:
 			lines.append("%-12s %6.2f%%" % [String(k), float(covers[k])*100.0])
 	if String(surf.get("liquid_species","")) != "":
-		lines.append("Liquid species: %s" % surf.get("liquid_species",""))
+		lines.append("Liquid species: %s   depth: %.3f m" % [surf.get("liquid_species",""), float(surf.get("liquid_depth_m",0.0))])
 	if String(surf.get("frost_species","")) != "":
-		lines.append("Frost/ice species: %s" % surf.get("frost_species",""))
+		lines.append("Frost/ice species: %s   equivalent depth: %.3f m" % [surf.get("frost_species",""), float(surf.get("frost_equivalent_depth_m",0.0))])
+	var water_table := float(surf.get("water_table_depth_m", INF))
+	if is_finite(water_table):
+		lines.append("Nearest condensed-reservoir table: %.3f m below surface" % water_table)
+
+	var hydro: Dictionary = r.get("hydrosphere", {})
+	lines.append("\n[b]PLANETARY CONDENSED RESERVOIR[/b]")
+	for s in hydro.get("mean_equivalent_depth_m", {}).keys():
+		lines.append("%-5s mean equivalent depth %10.3f m   level %10.3f m" % [
+			s, float(hydro.get("mean_equivalent_depth_m", {})[s]),
+			float(hydro.get("sea_levels_m", {}).get(s, 0.0))
+		])
 
 	lines.append("\n[b]ATMOSPHERE[/b]")
 	lines.append("Mean molar mass: %.5g kg/mol   Scale height: %.1f m   RH: %.1f%%   Wind: %.2f m/s" % [
