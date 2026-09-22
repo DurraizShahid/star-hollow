@@ -13,6 +13,19 @@ const NOMINAL_SPECIES := ["H2", "He", "N2", "O2", "CO2", "CO", "H2O", "CH4", "NH
 static func build(planet: PlanetParameters) -> AtmosphereState:
 	var atm := AtmosphereState.new()
 	atm.gravity = planet.surface_gravity
+	if planet.atmosphere_pressure_override_pa > 0.0 and not planet.atmosphere_mole_fraction_override.is_empty():
+		atm.total_pressure = planet.atmosphere_pressure_override_pa
+		atm.temperature = _reference_temperature(planet)
+		var xsum := 0.0
+		for s in planet.atmosphere_mole_fraction_override.keys():
+			if SpeciesDatabase.has(s):
+				xsum += maxf(0.0, float(planet.atmosphere_mole_fraction_override[s]))
+		for s in planet.atmosphere_mole_fraction_override.keys():
+			if SpeciesDatabase.has(s):
+				atm.add_species(s, maxf(0.0, float(planet.atmosphere_mole_fraction_override[s])) / maxf(xsum, 1.0e-12))
+		atm.notes.append("preset/reference atmosphere override")
+		atm.recompute()
+		return atm
 	var volumetric := _reservoir_column_pressure(planet)
 	var reference_temp := _reference_temperature(planet)
 	atm.temperature = reference_temp
