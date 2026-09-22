@@ -69,6 +69,11 @@ func _format_report(result: Dictionary) -> String:
 		d.get("material_signature", "—"), "YES" if d.get("material_new", false) else "no",
 		float(d.get("novelty_distance", 0.0))
 	])
+	var fp: Dictionary = d.get("fingerprint", {})
+	lines.append("Fingerprint dimensions: elements %d · minerals %d · phases %d · texture %d · environment %d" % [
+		fp.get("element_vector", {}).size(), fp.get("mineral_vector", {}).size(),
+		fp.get("phase_vector", {}).size(), fp.get("texture", {}).size(), fp.get("environment", {}).size()
+	])
 	var p: Vector2 = r.get("position", Vector2.ZERO)
 	lines.append("Coordinates: %.2f, %.2f m   Elevation: %.1f m   Gravity: %.3f m/s²" % [
 		p.x, p.y, float(r.get("elevation_m", 0.0)), float(r.get("gravity", 0.0))
@@ -167,6 +172,9 @@ func _format_report(result: Dictionary) -> String:
 		model.get("fidelity",{}).get("thermal",""), model.get("fidelity",{}).get("atmosphere",""),
 		model.get("fidelity",{}).get("minerals","")
 	])
+	lines.append("\n[b]CONFIDENCE / FIDELITY[/b]")
+	for k in model.get("confidence", {}).keys():
+		lines.append("%-24s %s" % [String(k), String(model.get("confidence", {})[k])])
 	lines.append("[color=#c9a46a]Approximations: %s[/color]" % ", ".join(model.get("approximation_flags",[])))
 	return "\n".join(lines)
 
