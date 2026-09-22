@@ -28,6 +28,9 @@ func set_debug_field(field: String) -> void:
 	debug_field = field
 	_rebuild_ground()
 
+func refresh_ground() -> void:
+	_rebuild_ground()
+
 func _rebuild() -> void:
 	for child in get_children():
 		child.queue_free()
