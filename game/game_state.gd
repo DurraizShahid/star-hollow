@@ -142,6 +142,8 @@ func take_sample(position: Vector2) -> Dictionary:
 	last_sample_result = result
 	update_environment(position)
 	sample_taken.emit(result)
+	# A probe discovery is a natural autosave boundary. Chunks remain deterministic and are not serialized.
+	save_game()
 	return result
 
 func set_debug_field(field: String) -> void:
@@ -189,3 +191,10 @@ static func _parse_chunk_key(key: String) -> Vector2i:
 	if parts.size() != 2:
 		return Vector2i.ZERO
 	return Vector2i(int(parts[0]), int(parts[1]))
+
+
+func save_game(path: String = SaveSystem.DEFAULT_PATH) -> bool:
+	return SaveSystem.save_game(self, path)
+
+func load_saved_game(path: String = SaveSystem.DEFAULT_PATH) -> Dictionary:
+	return SaveSystem.load_game(self, path)
