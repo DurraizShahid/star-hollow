@@ -144,7 +144,11 @@ static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParam
 			p.age = 4.5e9
 			p.geothermal_flux = 0.02
 			_apply_composition(p, "chondritic", 0.2)
-			p.degas_fraction = 0.0001
+			# Airless means no modeled volatile reservoir, not merely weak degassing.
+			# AtmosphereModel will retain only its numerical pressure floor.
+			p.volatility_fraction = 0.0
+			p.volatile_inventory = {}
+			p.degas_fraction = 0.0
 			p.albedo_initial = 0.16
 		"earthlike":
 			_set_basic(p, "Earth-like", SciConstants.SOLAR_LUMINOSITY, 5772.0, SciConstants.AU_M, 23.44, SciConstants.EARTH_MASS)
