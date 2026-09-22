@@ -21,6 +21,7 @@ const PATHS := [
 	"res://science/phase_solver.gd",
 	"res://science/atmosphere_state.gd",
 	"res://science/atmosphere_model.gd",
+	"res://science/hydrosphere_model.gd",
 	"res://science/thermal_state.gd",
 	"res://science/thermal_model.gd",
 	"res://science/substrate_state.gd",
