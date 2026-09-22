@@ -9,14 +9,16 @@ const CELLS := CoupledPlanetSolver.CHUNK_CELLS
 var chunk: Dictionary
 var world_seed := 0
 var debug_field := "normal"
+var game_state: GameState
 var ground_sprite: Sprite2D
 var rock_instances: MultiMeshInstance2D
 var plant_instances: MultiMeshInstance2D
 
-func configure(chunk_data: Dictionary, seed_value: int, field: String = "normal") -> void:
+func configure(chunk_data: Dictionary, seed_value: int, field: String = "normal", gs: GameState = null) -> void:
 	chunk = chunk_data
 	world_seed = seed_value
 	debug_field = field
+	game_state = gs
 	position = chunk.get("origin", Vector2.ZERO)
 	_rebuild()
 
@@ -60,19 +62,33 @@ func _rebuild_ground() -> void:
 	ground_sprite.z_index = -10
 
 func _interpolated_color(u: float, v: float) -> Color:
-	var gx := clampf(u * CELLS - 0.5, 0.0, CELLS - 1.001)
-	var gy := clampf(v * CELLS - 0.5, 0.0, CELLS - 1.001)
+	# Interpolate in the GLOBAL cell lattice so a chunk edge uses the neighbor's
+	# science cell rather than clamping to its own edge cell.
+	var world_x := position.x + u * CoupledPlanetSolver.CHUNK_EDGE
+	var world_y := position.y + v * CoupledPlanetSolver.CHUNK_EDGE
+	var gx := world_x / CoupledPlanetSolver.CELL_SIZE - 0.5
+	var gy := world_y / CoupledPlanetSolver.CELL_SIZE - 0.5
 	var x0 := floori(gx)
 	var y0 := floori(gy)
-	var x1 := mini(x0 + 1, CELLS - 1)
-	var y1 := mini(y0 + 1, CELLS - 1)
+	var x1 := x0 + 1
+	var y1 := y0 + 1
 	var tx := gx - x0
 	var ty := gy - y0
-	var c00 := _cell_color(_record(x0, y0))
-	var c10 := _cell_color(_record(x1, y0))
-	var c01 := _cell_color(_record(x0, y1))
-	var c11 := _cell_color(_record(x1, y1))
+	var c00 := _cell_color(_record_global(x0, y0))
+	var c10 := _cell_color(_record_global(x1, y0))
+	var c01 := _cell_color(_record_global(x0, y1))
+	var c11 := _cell_color(_record_global(x1, y1))
 	return c00.lerp(c10, tx).lerp(c01.lerp(c11, tx), ty)
+
+func _record_global(cell_x: int, cell_y: int) -> Dictionary:
+	if game_state != null:
+		var global_record := game_state.cell_at_grid(cell_x, cell_y, false)
+		if not global_record.is_empty():
+			return global_record
+	# Fallback is only used at the outermost not-yet-loaded streaming edge.
+	var origin_cell_x := floori(position.x / CoupledPlanetSolver.CELL_SIZE)
+	var origin_cell_y := floori(position.y / CoupledPlanetSolver.CELL_SIZE)
+	return _record(clampi(cell_x-origin_cell_x,0,CELLS-1), clampi(cell_y-origin_cell_y,0,CELLS-1))
 
 func _record(ix: int, iy: int) -> Dictionary:
 	var records: Array = chunk.get("records", [])
