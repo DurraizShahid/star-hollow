@@ -5,7 +5,7 @@ extends RefCounted
 
 const DEFAULT_PATH := "user://star_hollow_save.json"
 
-static func save_game(gs: GameState, path: String = DEFAULT_PATH) -> bool:
+static func save_game(gs, path: String = DEFAULT_PATH) -> bool:
 	if gs == null or gs.planet == null:
 		return false
 	var player_pos := gs.player.global_position if gs.player != null else Vector2.ZERO
@@ -27,7 +27,7 @@ static func save_game(gs: GameState, path: String = DEFAULT_PATH) -> bool:
 	file.store_string(JSON.stringify(payload))
 	return true
 
-static func load_game(gs: GameState, path: String = DEFAULT_PATH) -> Dictionary:
+static func load_game(gs, path: String = DEFAULT_PATH) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {"ok": false, "reason": "missing"}
 	var file := FileAccess.open(path, FileAccess.READ)
