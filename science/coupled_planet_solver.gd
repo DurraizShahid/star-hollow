@@ -13,6 +13,7 @@ const COUPLED_TOL_K := 0.05
 var planet: PlanetParameters
 var geology: GeologyModel
 var atmosphere: AtmosphereState       # planet reference column
+var hydrosphere: HydrosphereModel
 var seed_value: int
 var t_atm: float
 
@@ -21,6 +22,7 @@ func _init(p: PlanetParameters, seed_value_in: int = 0) -> void:
 	seed_value = seed_value_in if seed_value_in != 0 else p.seed
 	geology = GeologyModel.new(p, seed_value)
 	atmosphere = AtmosphereModel.build(p)
+	hydrosphere = HydrosphereModel.new(p, geology, atmosphere)
 	t_atm = AtmosphereModel.surface_temperature_estimate(p, atmosphere)
 
 func rebalance_atmosphere() -> void:
@@ -76,6 +78,7 @@ func _solve_cell(x: float, y: float) -> Dictionary:
 			"substrate": substrate,
 		})
 		_phase_covers(surface, thermal, local_atm)
+		_apply_hydrosphere(surface, boundary, thermal, local_atm)
 		_apply_fast_surface_feedback(surface)
 
 		var next_air_t := AtmosphereModel.couple_air_temperature(
@@ -123,6 +126,7 @@ func _solve_cell(x: float, y: float) -> Dictionary:
 			"substrate": substrate,
 		})
 		_phase_covers(surface, thermal, local_atm)
+		_apply_hydrosphere(surface, boundary, thermal, local_atm)
 		_apply_fast_surface_feedback(surface)
 		var next_air := AtmosphereModel.couple_air_temperature(
 			local_atm.temperature, thermal.temperature, local_atm.total_pressure, boundary.wind_speed)
@@ -241,6 +245,9 @@ func _phase_covers(surface: SurfaceState, thermal: ThermalState, atm: Atmosphere
 	surface.liquid_species = ""
 	surface.frost_cover = 0.0
 	surface.frost_species = ""
+	surface.liquid_depth_m = 0.0
+	surface.frost_equivalent_depth_m = 0.0
+	surface.water_table_depth_m = INF
 	surface.volatile_reservoir.clear()
 	surface.phase_notes.clear()
 	var best_species := ""
@@ -269,7 +276,7 @@ func _phase_covers(surface: SurfaceState, thermal: ThermalState, atm: Atmosphere
 	if density == null or density <= 0.0:
 		density = 1000.0
 	var cover := clampf((best_mass / density) / COVER_REF_DEPTH, 0.0, 1.0)
-	var phase := PhaseSolver.phase_of(best_species, thermal.temperature, atm.partial_pressure(best_species))
+	var phase := PhaseSolver.phase_of(best_species, thermal.temperature, atm.total_pressure)
 	match phase.get("phase", PhaseSolver.PHASE_VAPOR):
 		PhaseSolver.PHASE_LIQUID:
 			surface.liquid_cover = cover
@@ -282,6 +289,32 @@ func _phase_covers(surface: SurfaceState, thermal: ThermalState, atm: Atmosphere
 	surface.phase_notes.append("%s %s stable; condensed column %.3g kg/m2" % [
 		best_species, phase.get("phase", "?"), best_mass])
 	surface.humidity = atm.relative_humidity
+
+func _apply_hydrosphere(surface: SurfaceState, boundary: GeologyModel.CellBoundary,
+		thermal: ThermalState, atm: AtmosphereState) -> void:
+	var reservoir := hydrosphere.state_at(boundary.elevation, thermal.temperature, atm)
+	surface.water_table_depth_m = float(reservoir.get("water_table_depth_m", INF))
+	var species := String(reservoir.get("species", ""))
+	if species == "":
+		return
+	var cover := float(reservoir.get("cover", 0.0))
+	var depth := float(reservoir.get("depth_m", 0.0))
+	var phase := String(reservoir.get("phase", PhaseSolver.PHASE_VAPOR))
+	var rho_variant: Variant = SpeciesDatabase.liquid_density(species)
+	if rho_variant == null or float(rho_variant) <= 0.0:
+		rho_variant = SpeciesDatabase.solid_density(species)
+	var rho := 1000.0 if rho_variant == null else maxf(float(rho_variant), 1.0)
+	surface.volatile_reservoir[species] = maxf(
+		float(surface.volatile_reservoir.get(species, 0.0)), depth * rho)
+	if phase == PhaseSolver.PHASE_LIQUID and cover >= surface.frost_cover:
+		surface.liquid_cover = maxf(surface.liquid_cover, cover)
+		surface.liquid_species = species
+		surface.liquid_depth_m = maxf(surface.liquid_depth_m, depth)
+	elif phase == PhaseSolver.PHASE_SOLID and cover >= surface.liquid_cover:
+		surface.frost_cover = maxf(surface.frost_cover, cover)
+		surface.frost_species = species
+		surface.frost_equivalent_depth_m = maxf(surface.frost_equivalent_depth_m, depth)
+	surface.phase_notes.append("%s reservoir: %s, depth %.2f m" % [species, phase, depth])
 
 func _apply_fast_surface_feedback(surface: SurfaceState) -> void:
 	if surface.frost_cover > 0.0:
