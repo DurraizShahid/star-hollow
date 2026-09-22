@@ -13,6 +13,8 @@ This file is intentionally conservative. A green test suite means the implementa
 - pressure-aware pure-species phase classification;
 - stoichiometric mineral allocation/conservation;
 - deterministic geological fields;
+- atmospheric versus condensed volatile mass bookkeeping;
+- deterministic statistical sea/equipotential levels from condensed inventory;
 - quantitative material-distance fingerprints.
 
 ## Simplified physical / empirical
@@ -24,7 +26,8 @@ This file is intentionally conservative. A green test suite means the implementa
 - weathering kinetics;
 - erosion/sediment transport;
 - oxidation/hydration indices;
-- surface-cover fraction from condensed column;
+- surface-cover fraction from atmospheric condensation;
+- representative-terrain volume solve for condensed reservoirs;
 - Earth-like vegetation suitability.
 
 ## Heuristic
@@ -41,7 +44,9 @@ This file is intentionally conservative. A green test suite means the implementa
 - photochemistry;
 - atmospheric escape/retention over geologic time;
 - tectonic plate evolution;
-- full hydrology/drainage network;
+- river routing, watershed/drainage networks and groundwater flow;
+- dynamic precipitation/evaporation mass transport between cells;
+- ocean circulation, waves and tides;
 - impact chronology;
 - full magma thermodynamics;
 - full Gibbs minimization using temperature/pressure-dependent chemical potentials;
