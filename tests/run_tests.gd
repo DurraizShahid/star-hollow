@@ -134,6 +134,31 @@ func _initialize() -> void:
 	_check("first sample creates material signature", first["material_new"] == true)
 	_check("identical sample reuses material signature", second["material_new"] == false and second["material_signature"] == first["material_signature"])
 
+	# World-coordinate indexing across negative chunk coordinates.
+	var gs_index := GameState.new()
+	gs_index.init_planet("marslike", 71)
+	var neg_cell := gs_index.cell_at_world(Vector2(-4.0, -4.0), true)
+	_check("negative world coordinates map to correct cell", not neg_cell.is_empty() and neg_cell["position"] == Vector2(-4.0, -4.0))
+
+	# Versioned save round-trip: seed/position/discovery state only, never chunks.
+	var save_path := "user://star_hollow_ci_test.json"
+	var gs_save := GameState.new()
+	gs_save.init_planet("earthlike", 123)
+	var fake_player := Node2D.new()
+	fake_player.global_position = Vector2(-321.5, 778.25)
+	gs_save.player = fake_player
+	gs_save.discovery.process(sample)
+	_check("save writes deterministic exploration state", SaveSystem.save_game(gs_save, save_path))
+	var gs_load := GameState.new()
+	var fake_loaded_player := Node2D.new()
+	gs_load.player = fake_loaded_player
+	var load_result := SaveSystem.load_game(gs_load, save_path)
+	_check("save reload succeeds for same generator version", load_result.get("ok", false))
+	_check("save preserves planet seed", gs_load.planet.seed == 123)
+	_check("save preserves player position", fake_loaded_player.global_position.distance_to(Vector2(-321.5, 778.25)) < 1e-6)
+	_check("save preserves material discoveries", gs_load.discovery.material_records.size() == gs_save.discovery.material_records.size())
+	_check("save does not serialize chunk cache", gs_load.chunk_map.is_empty())
+
 	print("== run_tests: %d assertions, %d failures ==" % [asserts, failures])
 	quit(1 if failures > 0 else 0)
 
