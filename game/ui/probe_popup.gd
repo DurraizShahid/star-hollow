@@ -83,7 +83,7 @@ func _format_report(result: Dictionary) -> String:
 		float(r.get("temperature", 0.0)), SciConstants.k_to_c(float(r.get("temperature", 0.0))),
 		float(r.get("air_temperature", 0.0)), float(r.get("shallow_subsurface_temperature", 0.0))
 	])
-	lines.append("Pressure: %s Pa   Air density: %.5g kg/m³" % [
+	lines.append("Pressure: %s Pa   Air density: %.5e kg/m³" % [
 		String.num_scientific(float(r.get("pressure", 0.0))), float(r.get("density", 0.0))
 	])
 	var phases: Dictionary = r.get("phase_fractions", {})
@@ -102,15 +102,15 @@ func _format_report(result: Dictionary) -> String:
 		lines.append("%-34s %8.3f%%" % [m.get("name","?"), float(m.get("mass_pct",0.0))])
 
 	lines.append("\n[b]GROUND PHYSICAL PROPERTIES[/b]")
-	lines.append("Regolith: %.3f m   Porosity: %.3f   Grain mean: %.4g m   Grain spread σg: %.2f" % [
+	lines.append("Regolith: %.3f m   Porosity: %.3f   Grain mean: %.4e m   Grain spread σg: %.2f" % [
 		float(sub.get("regolith_m",0.0)), float(sub.get("porosity",0.0)),
 		float(sub.get("grain_size_mean_m",0.0)), float(sub.get("grain_size_sigma",0.0))
 	])
-	lines.append("Grain density: %.1f kg/m³   Bulk density: %.1f kg/m³   Permeability: %.3g m²" % [
+	lines.append("Grain density: %.1f kg/m³   Bulk density: %.1f kg/m³   Permeability: %.3e m²" % [
 		float(sub.get("grain_density_kg_m3",0.0)), float(sub.get("bulk_density_kg_m3",0.0)),
 		float(sub.get("permeability_m2",0.0))
 	])
-	lines.append("k: %.3f W/(m·K)   cp: %.1f J/(kg·K)   diffusivity: %.3g m²/s   hardness ≈ %.2f Mohs" % [
+	lines.append("k: %.3f W/(m·K)   cp: %.1f J/(kg·K)   diffusivity: %.3e m²/s   hardness ≈ %.2f Mohs" % [
 		float(sub.get("thermal_conductivity_w_mk",0.0)), float(sub.get("heat_capacity_j_kgk",0.0)),
 		float(sub.get("thermal_diffusivity_m2_s",0.0)), float(sub.get("hardness_mohs_approx",0.0))
 	])
@@ -142,7 +142,7 @@ func _format_report(result: Dictionary) -> String:
 		])
 
 	lines.append("\n[b]ATMOSPHERE[/b]")
-	lines.append("Mean molar mass: %.5g kg/mol   Scale height: %.1f m   RH: %.1f%%   Wind: %.2f m/s" % [
+	lines.append("Mean molar mass: %.5e kg/mol   Scale height: %.1f m   RH: %.1f%%   Wind: %.2f m/s" % [
 		float(atm.get("mean_molar_mass_kg_mol",0.0)), float(atm.get("scale_height_m",0.0)),
 		float(atm.get("relative_humidity",0.0))*100.0, float(atm.get("wind_m_s",0.0))
 	])
@@ -166,11 +166,11 @@ func _format_report(result: Dictionary) -> String:
 	lines.append("\n[b]ENERGY BALANCE — W/m²[/b]")
 	var energy: Dictionary = r.get("energy", {})
 	for k in ["solar","down_ir","geothermal","out_ir","sensible","latent","conductive","net"]:
-		lines.append("%-12s %12.5g" % [k, float(energy.get(k,0.0))])
+		lines.append("%-12s %12.5e" % [k, float(energy.get(k,0.0))])
 
 	lines.append("\n[b]MODEL STATUS[/b]")
 	var coupling: Dictionary = model.get("coupling", {})
-	lines.append("Thermal solver: %s | residual %.5g W/m² | converged: %s" % [
+	lines.append("Thermal solver: %s | residual %.5e W/m² | converged: %s" % [
 		model.get("thermal_convergence",""), float(model.get("thermal_residual_w_m2",0.0)),
 		str(model.get("thermal_converged",false))
 	])
