@@ -30,7 +30,7 @@ const FIDELITY_NAME := {
 
 ## Version of the world-generator (science + geology + rendering). Bump when a
 ## reproducibility-relevant algorithm changes so old saves can be flagged.
-const WORLD_GENERATOR_VERSION := 2
+const WORLD_GENERATOR_VERSION := 3
 
 # ---- Fundamental constants (SI) -------------------------------------------
 const G := 6.67430e-11          # gravitational constant, m^3 kg^-1 s^-2   (CODATA 2018)
