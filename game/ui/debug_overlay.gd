@@ -1,52 +1,68 @@
 # debug_overlay.gd
-# -----------------------------------------------------------------------------
-# F1 toggle debug overlay: chunk map, solver convergence, FPS, memory.
-# -----------------------------------------------------------------------------
 class_name DebugOverlay
-extends Control
+extends CanvasLayer
 
-@onready var _gs := get_node_or_null("/root/GameState") as GameState
-var _visible := false
-var _fps := 0
-var _frame_count := 0
-var _fps_timer := 0.0
+var _gs: GameState
+var _panel: PanelContainer
+var _label: RichTextLabel
+var _fps := 0.0
 
 func _ready() -> void:
-	set_process(true)
+	layer = 20
+	_gs = get_node_or_null("/root/GameState") as GameState
+	_panel = PanelContainer.new()
+	_panel.position = Vector2(14, 180)
+	_panel.custom_minimum_size = Vector2(360, 200)
+	add_child(_panel)
+	_label = RichTextLabel.new()
+	_label.bbcode_enabled = true
+	_label.fit_content = true
+	_label.custom_minimum_size = Vector2(340, 180)
+	_panel.add_child(_label)
 	visible = false
 
-func _input(event: InputEvent) -> void:
-	if _gs != null and event.is_action_pressed("ui_cancel") and not _gs.is_catalogue_open:
-		_visible = not _visible
-		visible = _visible
+func _unhandled_input(event: InputEvent) -> void:
+	if _gs == null or not (event is InputEventKey):
+		return
+	var key := event as InputEventKey
+	if not key.pressed or key.echo:
+		return
+	var code := key.physical_keycode if key.physical_keycode != 0 else key.keycode
+	if code == KEY_F1:
+		visible = not visible
+		_gs.is_debug = visible
+		if not visible:
+			_gs.set_debug_field("normal")
+		elif _gs.debug_field == "normal":
+			_gs.set_debug_field("ground_temperature")
+		get_viewport().set_input_as_handled()
+	elif code == KEY_F2 and visible:
+		_gs.cycle_debug_field(1)
+		get_viewport().set_input_as_handled()
 
 func _process(_delta: float) -> void:
-	if not visible:
+	if not visible or _gs == null:
 		return
-	_fps_timer += _delta
-	_frame_count += 1
-	if _fps_timer >= 0.5:
-		_fps = roundi(_frame_count / _fps_timer)
-		_frame_count = 0
-		_fps_timer = 0.0
-	queue_redraw()
-
-func _draw() -> void:
-	if _gs == null:
-		return
-	var lines := [
-		"DEBUG OVERLAY (F1/Cancel to close)",
-		"FPS: %d" % _fps,
-		"Chunks loaded: %d" % _gs.chunk_map.size(),
-		"Player pos: %.0f, %.0f" % [_gs.player.global_position.x, _gs.player.global_position.y],
-		"Solver t_atm: %.1f K" % _gs.solver.t_atm,
-		"World gen v: %d" % SciConstants.WORLD_GENERATOR_VERSION,
+	_fps = Engine.get_frames_per_second()
+	var cell := _gs.cell_at_world(_gs.player.global_position, false) if _gs.player != null else {}
+	var residual := 0.0
+	var coupling := {}
+	var province := ""
+	if not cell.is_empty():
+		residual = float(cell.get("thermal").residual_w_m2)
+		coupling = cell.get("coupling", {})
+		province = cell.get("boundary").province_primary
+	_label.text = """[b]SCIENCE DEBUG[/b]
+Field: [b]%s[/b]  (F2 cycles)
+FPS %.0f  |  science chunks %d
+Province: %s
+Cell residual: %.5g W/m²
+Coupling: %s · %d iterations
+Reference atmosphere T: %.2f K
+Generator v%d
+[color=#a7bac7]F1 closes and restores normal material rendering[/color]""" % [
+		_gs.debug_field, _fps, _gs.chunk_map.size(), province, residual,
+		"converged" if coupling.get("converged", false) else "approximate",
+		int(coupling.get("iterations", 0)), _gs.solver.t_atm,
+		SciConstants.WORLD_GENERATOR_VERSION
 	]
-	var y := 10
-	for line in lines:
-		draw_string(ThemeDB.fallback_font, Vector2(10, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0, 0, 0, 0.9))
-		y += 18
-
-func _toggle() -> void:
-	_visible = not _visible
-	visible = _visible
