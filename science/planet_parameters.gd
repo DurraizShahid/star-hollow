@@ -129,6 +129,7 @@ static func from_random(seed_value: int, planet_name: String = "") -> PlanetPara
 	var class_keys: Array = CompositionClasses.keys()
 	var ck: String = class_keys[rng.randi_range(0, class_keys.size() - 1)]
 	_apply_composition(p, ck, 0.5)
+	p._finalize()
 	return p
 
 static func from_preset(preset_name: String, seed_value: int = 1) -> PlanetParameters:
