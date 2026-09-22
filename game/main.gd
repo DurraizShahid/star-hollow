@@ -20,6 +20,11 @@ func _ready() -> void:
 	_chunk_layer.name = "ChunkLayer"
 	add_child(_chunk_layer)
 	_make_player()
+	var load_result := _gs.load_saved_game()
+	if load_result.get("ok", false):
+		print("Loaded Star Hollow save for generator v%d" % SciConstants.WORLD_GENERATOR_VERSION)
+	elif load_result.get("reason", "") == "generator_version_mismatch":
+		push_warning("Existing save uses generator v%d; current generator is v%d, so it was not loaded." % [load_result.get("saved_generator_version", -1), SciConstants.WORLD_GENERATOR_VERSION])
 	_make_ui()
 	_gs.debug_field_changed.connect(_on_debug_field_changed)
 	_update_streaming(true)
@@ -103,3 +108,8 @@ func _on_debug_field_changed(field: String) -> void:
 		var renderer: ProceduralChunkRenderer = _visual_chunks[key]
 		if is_instance_valid(renderer):
 			renderer.set_debug_field(field)
+
+
+func _exit_tree() -> void:
+	if _gs != null and _gs.planet != null:
+		_gs.save_game()
