@@ -3,6 +3,8 @@ class_name Main
 extends Node2D
 
 const CHUNK_LOAD_RADIUS := 2
+const ChunkRendererScript := preload("res://game/world/procedural_chunk_renderer.gd")
+const ProbePopupScript := preload("res://game/ui/probe_popup.gd")
 
 var _player_cx := 999999
 var _player_cy := 999999
@@ -65,7 +67,7 @@ func _update_streaming(force: bool) -> void:
 			_visual_chunks.erase(key)
 
 func _create_chunk_visual(key: String, chunk: Dictionary) -> void:
-	var renderer := ProceduralChunkRenderer.new()
+	var renderer := ChunkRendererScript.new()
 	renderer.name = "chunk_%s" % key
 	_chunk_layer.add_child(renderer)
 	renderer.configure(chunk, _gs.planet.seed, _gs.debug_field)
@@ -98,14 +100,14 @@ func _make_ui() -> void:
 	cat.name = "DiscoveryUI"
 	add_child(cat)
 	_gs.discovery_ui = cat
-	var popup := ProbePopup.new()
+	var popup := ProbePopupScript.new()
 	popup.name = "ProbePopup"
 	add_child(popup)
 	_gs.sample_popup = popup
 
 func _on_debug_field_changed(field: String) -> void:
 	for key in _visual_chunks.keys():
-		var renderer: ProceduralChunkRenderer = _visual_chunks[key]
+		var renderer = _visual_chunks[key]
 		if is_instance_valid(renderer):
 			renderer.set_debug_field(field)
 
