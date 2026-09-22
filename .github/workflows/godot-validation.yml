@@ -30,6 +30,9 @@ jobs:
       - name: Import and parse project
         run: godot --headless --path . --editor --quit-after 3
 
+      - name: Boot main scene
+        run: timeout 120 godot --headless --path . --quit-after 1
+
       - name: Scientific unit tests
         run: godot --headless --path . --script res://tests/run_tests.gd
 
