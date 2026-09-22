@@ -45,8 +45,9 @@ static func assess(thermal: ThermalState, surface: SurfaceState, atm: Atmosphere
 		label = "tholin (abiotic organics)"
 		notes.append("photochemical haze deposit")
 
-	# Genesis energy gate.
-	if energy > 8.0 and hab > 0.015 and surface.liquid_cover >= 0.01 and surface.has_liquid_or_frost("H2O"):
+	# Habitability does not imply inhabitance. Biology is only instantiated when
+	# the planet explicitly carries a biosphere; abiotic tholins above remain possible.
+	if planet.biosphere_enabled and energy > 8.0 and hab > 0.015 and surface.liquid_cover >= 0.01 and surface.has_liquid_or_frost("H2O"):
 		var growth := clampf((energy - 8.0) / 60.0, 0.0, 1.0) * hab * liquid_factor * 3.0
 		biomass = clampf(growth, 0.0, 2.4)
 		organic = minf(1.0, 0.1 + biomass * 0.22)
@@ -57,7 +58,7 @@ static func assess(thermal: ThermalState, surface: SurfaceState, atm: Atmosphere
 			label = "scattered photosynthetic colonies"
 		else:
 			label = "dense biogenic mat"
-	elif energy > 4.0 and surface.has_liquid_or_frost("H2O") and hab > 0.004:
+	elif planet.biosphere_enabled and energy > 4.0 and surface.has_liquid_or_frost("H2O") and hab > 0.004:
 		biomass = 0.02
 		organic = 0.04
 		label = "marginal thermosynthetic niche"
