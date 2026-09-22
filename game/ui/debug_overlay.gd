@@ -56,7 +56,7 @@ func _process(_delta: float) -> void:
 Field: [b]%s[/b]  (F2 cycles)
 FPS %.0f  |  science chunks %d
 Province: %s
-Cell residual: %.5g W/m²
+Cell residual: %.5e W/m²
 Coupling: %s · %d iterations
 Reference atmosphere T: %.2f K
 Generator v%d
