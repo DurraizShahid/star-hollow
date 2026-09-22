@@ -32,7 +32,7 @@ Pos %.1f, %.1f m  |  Elev %.1f m
 Ground %.2f K / %.2f °C  |  Air %.2f K
 Pressure %s Pa  |  g %.3f m/s²
 Samples %d  |  Elements %d · Compounds %d · Materials %d
-[color=#a7bac7]WASD move · X probe · Tab discoveries · F1 science overlay · F2 field[/color]""" % [
+[color=#a7bac7]WASD move · X probe · Tab discoveries · F1 overlay · F2 field · F3 preset · F4 random · F5 save · F9 load[/color]""" % [
 		p.name, p.seed, SciConstants.WORLD_GENERATOR_VERSION,
 		pos.x, pos.y, _gs.current_elevation,
 		_gs.current_label,
