@@ -13,6 +13,7 @@ const PATHS := [
 	"res://science/thermodynamics.gd",
 	"res://science/phase_solver.gd",
 	"res://science/atmosphere_state.gd",
+	"res://science/atmospheric_escape.gd",
 	"res://science/atmosphere_model.gd",
 	"res://science/hydrosphere_model.gd",
 	"res://science/thermal_state.gd",
@@ -65,6 +66,18 @@ func _initialize() -> void:
 	_check("Earth preset pressure ~= 101325 Pa", absf(atm.total_pressure - SciConstants.EARTH_PRESSURE) < 1.0)
 	_check("Earth preset is N2-dominant", atm.mole_fraction("N2") > 0.77 and atm.mole_fraction("N2") < 0.79)
 	_check("Earth preset O2 ~20.9%", atm.mole_fraction("O2") > 0.20 and atm.mole_fraction("O2") < 0.22)
+	_check("Earth reference atmosphere temperature ~= 288 K", absf(atm.temperature - SciConstants.EARTH_TEMP_REF) < 0.1)
+	var mars_atm := AtmosphereModel.build(mars)
+	var titan_atm := AtmosphereModel.build(titan)
+	var pluto_atm := AtmosphereModel.build(pluto)
+	_check("Mars reference atmosphere temperature ~= 218 K", absf(mars_atm.temperature - SciConstants.MARS_TEMPERATURE) < 0.1)
+	_check("Titan reference atmosphere temperature ~= 94 K", absf(titan_atm.temperature - SciConstants.TITAN_TEMPERATURE) < 0.1)
+	_check("Pluto reference atmosphere temperature ~= 44 K", absf(pluto_atm.temperature - SciConstants.PLUTO_TEMPERATURE) < 0.1)
+	var airless_atm := AtmosphereModel.build(PlanetParameters.from_preset("airless_rocky", 1))
+	_check("airless preset pressure is numerical vacuum", airless_atm.total_pressure <= SciConstants.MIN_PRESSURE_PA * 1.01)
+	var hot := PlanetParameters.from_preset("hot_lava", 1)
+	_check("hot small world loses H2 more readily than CO2",
+		AtmosphericEscape.retention_fraction(hot, "H2") < AtmosphericEscape.retention_fraction(hot, "CO2"))
 	_check("ideal gas rho = P M / RT", absf(atm.density - atm.total_pressure * atm.mean_molar_mass / (SciConstants.R_u * atm.temperature)) < 1e-6)
 	_check("scale height equation", absf(atm.scale_height - SciConstants.R_u * atm.temperature / (atm.mean_molar_mass * atm.gravity)) < 1e-3)
 	var high := AtmosphereModel.local_state(atm, 1000.0, atm.temperature)
