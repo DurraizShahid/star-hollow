@@ -130,6 +130,7 @@ func process(report: Dictionary) -> Dictionary:
 		"novelty_distance": nearest_distance,
 		"material_new": material_new,
 		"material_signature": signature_id,
+		"fingerprint": fp,
 		"total": total_found,
 	}
 
