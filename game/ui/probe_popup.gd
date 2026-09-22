@@ -152,6 +152,16 @@ func _format_report(result: Dictionary) -> String:
 				s.get("symbol","?"), float(s.get("mole_pct",0.0)),
 				String.num_scientific(float(s.get("partial_pressure_pa",0.0))), s.get("phase_at_surface","")
 			])
+	var escape: Dictionary = atm.get("escape_diagnostics", {})
+	if not escape.is_empty():
+		lines.append("Atmospheric retention (Jeans approximation):")
+		for sym in escape.keys():
+			var e: Dictionary = escape[sym]
+			lines.append("  %-5s λ=%7.2f   retained=%6.2f%%   Texo≈%.0f K" % [
+				sym, float(e.get("jeans_parameter",0.0)),
+				100.0*float(e.get("retained_fraction",0.0)),
+				float(e.get("exobase_temperature_k",0.0))
+			])
 
 	lines.append("\n[b]ENERGY BALANCE — W/m²[/b]")
 	var energy: Dictionary = r.get("energy", {})
