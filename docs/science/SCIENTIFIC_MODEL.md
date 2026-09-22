@@ -1,6 +1,6 @@
 # Star Hollow Scientific Model
 
-Generator version: **2**. Internal scientific quantities are SI unless a field says otherwise.
+Generator version: **3**. Internal scientific quantities are SI unless a field says otherwise.
 
 Star Hollow follows one directional rule: **science state is authoritative; graphics are a derived view**.
 
@@ -13,7 +13,11 @@ Each scientific cell resolves four coupled layers:
 3. **Local atmosphere** — composition, hydrostatic local pressure, density, scale height, humidity and wind.
 4. **Thermal state** — ground, shallow substrate and near-surface air temperatures plus audited energy fluxes.
 
-The solver iterates temperature, condensation, albedo and near-surface air coupling, then evaluates slower weathering/sediment/biology feedback and closes the thermal loop again.
+The solver iterates temperature, condensation, conserved surface-reservoir phase, albedo and near-surface air coupling, then evaluates slower weathering/sediment/biology feedback and closes the thermal loop again.
+
+## Hydrosphere / condensed reservoirs
+
+Volatile mass that is not retained in the atmosphere is preserved as a planet-mean condensed column. A deterministic statistical sea/equipotential level is solved against the generated elevation distribution so large liquid/ice reservoirs emerge from inventory + phase stability rather than an authored ocean mask. See `HYDROSPHERE_MODEL.md`.
 
 ## Planet mechanics
 
