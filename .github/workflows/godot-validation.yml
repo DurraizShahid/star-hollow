@@ -3,6 +3,7 @@ name: Godot Scientific Validation
 on:
   push:
     branches:
+      - feat/scientific-planet-simulation
       - feat/science-simulation-completion
     paths-ignore:
       - 'docs/**'
