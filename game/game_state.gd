@@ -95,6 +95,20 @@ func unload_distant_chunks(player_cx: int, player_cy: int) -> Array[String]:
 		chunk_map.erase(key)
 	return removed
 
+func cell_at_grid(cell_x: int, cell_y: int, load_if_missing: bool = true) -> Dictionary:
+	var cx := floori(float(cell_x) / float(CoupledPlanetSolver.CHUNK_CELLS))
+	var cy := floori(float(cell_y) / float(CoupledPlanetSolver.CHUNK_CELLS))
+	var chunk := get_chunk(cx, cy)
+	if chunk.is_empty() and load_if_missing:
+		chunk = load_chunk(cx, cy)
+	if chunk.is_empty():
+		return {}
+	var ix := posmod(cell_x, CoupledPlanetSolver.CHUNK_CELLS)
+	var iy := posmod(cell_y, CoupledPlanetSolver.CHUNK_CELLS)
+	var records: Array = chunk.get("records", [])
+	var index := iy * CoupledPlanetSolver.CHUNK_CELLS + ix
+	return records[index] if index >= 0 and index < records.size() else {}
+
 func cell_at_world(position: Vector2, load_if_missing: bool = true) -> Dictionary:
 	if solver == null:
 		return {}
