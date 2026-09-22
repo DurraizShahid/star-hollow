@@ -11,8 +11,7 @@ var elevation_m := 0.0
 var wind_speed_m_s := 0.0
 var wind_vector := Vector2.ZERO
 var relative_humidity := 0.0
-
-var mean_molar_mass := 0.0289644
+# Global reservoir bookkeeping, expressed as planet-mean kg/m². These are\n# copied into local columns unchanged; local pressure/elevation is separate.\nvar reservoir_column_mass := {}\nvar condensed_reservoir_column_mass := {}\n\nvar mean_molar_mass := 0.0289644
 var density := 1.225
 var scale_height := 8500.0
 var greenhouse_tau := 0.0
@@ -69,8 +68,7 @@ func copy_state() -> AtmosphereState:
 	a.elevation_m = elevation_m
 	a.wind_speed_m_s = wind_speed_m_s
 	a.wind_vector = wind_vector
-	a.relative_humidity = relative_humidity
-	a.greenhouse_fidelity = greenhouse_fidelity
+	a.relative_humidity = relative_humidity\n\ta.reservoir_column_mass = reservoir_column_mass.duplicate(true)\n\ta.condensed_reservoir_column_mass = condensed_reservoir_column_mass.duplicate(true)\n\ta.greenhouse_fidelity = greenhouse_fidelity
 	a.notes = notes.duplicate()
 	a.recompute()
 	return a
