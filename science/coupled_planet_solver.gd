@@ -273,11 +273,12 @@ func _phase_covers(surface: SurfaceState, thermal: ThermalState, atm: Atmosphere
 	if best_species == "":
 		return
 
-	var density := SpeciesDatabase.liquid_density(best_species)
-	if density == null or density <= 0.0:
-		density = SpeciesDatabase.solid_density(best_species)
-	if density == null or density <= 0.0:
-		density = 1000.0
+	var density_value: Variant = SpeciesDatabase.liquid_density(best_species)
+	if density_value == null or float(density_value) <= 0.0:
+		density_value = SpeciesDatabase.solid_density(best_species)
+	var density := 1000.0
+	if density_value != null and float(density_value) > 0.0:
+		density = float(density_value)
 	var cover := clampf((best_mass / density) / COVER_REF_DEPTH, 0.0, 1.0)
 	var phase := PhaseSolver.phase_of(best_species, thermal.temperature, atm.total_pressure)
 	match phase.get("phase", PhaseSolver.PHASE_VAPOR):
