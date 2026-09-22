@@ -216,12 +216,15 @@ func _make_substrate(budget: Dictionary, norm: Dictionary, boundary: GeologyMode
 
 func _make_surface(substrate: SubstrateState, boundary: GeologyModel.CellBoundary) -> SurfaceState:
 	var s := SurfaceState.new()
-	s.roughness = clampf(boundary.slope * 0.6 + boundary.fracture_density * 0.25, 0.05, 0.9)
+	s.base_roughness = clampf(boundary.slope * 0.6 + boundary.fracture_density * 0.25, 0.05, 0.9)
 	s.relief = clampf(boundary.slope * 900.0, 0.0, 300.0)
-	s.albedo = _mineral_reflectance(substrate)
-	s.emissivity = clampf(0.98 - s.roughness * 0.06, 0.80, 0.98)
-	substrate.albedo = s.albedo
-	substrate.emissivity = s.emissivity
+	s.base_albedo = _mineral_reflectance(substrate)
+	s.base_emissivity = clampf(0.98 - s.base_roughness * 0.06, 0.80, 0.98)
+	s.roughness = s.base_roughness
+	s.albedo = s.base_albedo
+	s.emissivity = s.base_emissivity
+	substrate.albedo = s.base_albedo
+	substrate.emissivity = s.base_emissivity
 	return s
 
 func _mineral_reflectance(substrate: SubstrateState) -> float:
@@ -317,21 +320,27 @@ func _apply_hydrosphere(surface: SurfaceState, boundary: GeologyModel.CellBounda
 	surface.phase_notes.append("%s reservoir: %s, depth %.2f m" % [species, phase, depth])
 
 func _apply_fast_surface_feedback(surface: SurfaceState) -> void:
-	if surface.frost_cover > 0.0:
-		surface.albedo = lerpf(surface.albedo, 0.76, surface.frost_cover)
-		surface.emissivity = lerpf(surface.emissivity, 0.97, surface.frost_cover)
-	if surface.liquid_cover > 0.0:
-		surface.albedo = lerpf(surface.albedo, 0.07, surface.liquid_cover)
-		surface.roughness *= 1.0 - 0.75 * surface.liquid_cover
-
-func _apply_slow_surface_feedback(surface: SurfaceState, sediment: Dictionary) -> void:
+	# Recompute from the immutable mineral/substrate baseline each iteration.
+	# Solver iteration count must never change material optical properties.
+	surface.albedo = surface.base_albedo
+	surface.emissivity = surface.base_emissivity
+	surface.roughness = surface.base_roughness
 	if surface.sediment_cover > 0.0:
-		var sediment_a := 0.28 if String(sediment.get("kind", "")) in ["sand", "silt"] else 0.20
+		var sediment_a := 0.28 if surface.sediment_kind in ["sand", "silt"] else 0.20
 		surface.albedo = lerpf(surface.albedo, sediment_a, surface.sediment_cover * 0.55)
 	if surface.organic_cover > 0.0:
 		surface.albedo = lerpf(surface.albedo, 0.12, surface.organic_cover * 0.45)
 	if surface.vegetation_cover > 0.0:
 		surface.albedo = lerpf(surface.albedo, 0.16, surface.vegetation_cover * 0.35)
+	if surface.frost_cover > 0.0:
+		surface.albedo = lerpf(surface.albedo, 0.76, surface.frost_cover)
+		surface.emissivity = lerpf(surface.emissivity, 0.97, surface.frost_cover)
+	if surface.liquid_cover > 0.0:
+		surface.albedo = lerpf(surface.albedo, 0.07, surface.liquid_cover)
+		surface.roughness = lerpf(surface.roughness, surface.base_roughness * 0.25, surface.liquid_cover)
+
+func _apply_slow_surface_feedback(surface: SurfaceState, _sediment: Dictionary) -> void:
+	_apply_fast_surface_feedback(surface)
 
 func _populate_surface_cover(surface: SurfaceState, substrate: SubstrateState,
 		boundary: GeologyModel.CellBoundary, sediment: Dictionary, weathering: Dictionary) -> void:
