@@ -4,8 +4,6 @@ extends Node2D
 
 const CHUNK_LOAD_RADIUS := 2
 const CHUNKS_PER_FRAME := 1
-const ChunkRendererScript := preload("res://game/world/procedural_chunk_renderer.gd")
-const ProbePopupScript := preload("res://game/ui/probe_popup.gd")
 
 var _player_cx := 999999
 var _player_cy := 999999
@@ -126,7 +124,7 @@ func _service_streaming(max_chunks: int) -> void:
 		generated += 1
 
 func _create_chunk_visual(key: String, chunk: Dictionary) -> void:
-	var renderer := ChunkRendererScript.new()
+	var renderer := ProceduralChunkRenderer.new()
 	renderer.name = "chunk_%s" % key
 	_chunk_layer.add_child(renderer)
 	renderer.configure(chunk, _gs.planet.seed, _gs.debug_field)
@@ -169,7 +167,7 @@ func _make_ui() -> void:
 	cat.name = "DiscoveryUI"
 	add_child(cat)
 	_gs.discovery_ui = cat
-	var popup := ProbePopupScript.new()
+	var popup := ProbePopup.new()
 	popup.name = "ProbePopup"
 	add_child(popup)
 	_gs.sample_popup = popup
